@@ -27,7 +27,9 @@ public:
 		processor->AddPlugin(*this);
 	}
 	virtual void Pre() {
-		int bytes = min(srcSize - srcDone, chunkSize);
+		int bytes = srcSize - srcDone;
+		if (bytes > chunkSize)
+			bytes = chunkSize;
 		processor->SetInputBuffer(srcBuffer + srcDone, bytes);
 		processor->SetMode(srcDone + bytes == srcSize);
 	}
@@ -55,7 +57,7 @@ public:
 		processor->AddPlugin(*this);
 	}
 	~InteractiveInput() {
-		delete buffer;
+		delete[] inputBuffer;
 	}
 	void GetBuffer(char *&buffer, int &size) const {
 		buffer = inputBuffer + inputSet;
@@ -81,7 +83,7 @@ public:
 
 class ContiguousOutput : public OutputPlugin {
 	BaseBufferProcessor *processor;
-	const char *dstBuffer;
+	char *dstBuffer;
 	int dstSize;
 	int dstDone;
 

@@ -11,6 +11,9 @@ public:
 	static const int MaxPluginsCount = 2;
 	BaseBufferProcessor();
 
+	//reset to default state
+	void Clear();
+
 	//shows how many output buffers are used (usually one)
 	virtual int GetStreamsCount() const = 0;
 	//external buffers must be supplied

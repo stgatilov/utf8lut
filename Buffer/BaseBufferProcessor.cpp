@@ -4,14 +4,19 @@
 #include <limits.h>
 
 BaseBufferProcessor::BaseBufferProcessor() {
+	Clear();
+}
+
+void BaseBufferProcessor::Clear() {
 	inputBuffer = 0;
 	inputSize = 0;
 	memset(outputBuffer, 0, sizeof(outputBuffer));
 	memset(outputSize, 0, sizeof(outputSize));
-	pluginsCount = 0;
+	inputDone = 0;
+	memset(outputDone, 0, sizeof(outputDone));
 	SetMode();
+	pluginsCount = 0;
 }
-
 
 void BaseBufferProcessor::SetInputBuffer(const char *ptr, int size) {
 	inputBuffer = ptr;
