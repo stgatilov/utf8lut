@@ -24,7 +24,7 @@ public:
 		srcSize = size;
 		srcDone = 0;
 		chunkSize = processor->GetInputBufferRecommendedSize();
-		processor->AddPlugin(this);
+		processor->AddPlugin(*this);
 	}
 	virtual void Pre() {
 		int bytes = min(srcSize - srcDone, chunkSize);
@@ -52,7 +52,7 @@ public:
 		inputSize = processor->GetInputBufferRecommendedSize();
 		inputBuffer = new char[inputSize];
 		inputSet = 0;
-		processor->AddPlugin(this);
+		processor->AddPlugin(*this);
 	}
 	~InteractiveInput() {
 		delete buffer;
@@ -100,7 +100,7 @@ public:
 			for (int i = 0; i < streamsCnt; i++)
 				multiBuffer[i] = new char[streamOutputSize];
 		}
-		processor->AddPlugin(this);
+		processor->AddPlugin(*this);
 	}
 	~ContiguousOutput() {
 		if (streamsCnt > 1)
@@ -144,7 +144,7 @@ public:
 		streamOutputSize = processor->GetOutputBufferMinSize(processor->GetInputBufferRecommendedSize());
 		for (int i = 0; i < streamsCnt; i++)
 			multiBuffer[i] = new char[streamOutputSize];
-		processor->AddPlugin(this);
+		processor->AddPlugin(*this);
 	}
 	~InteractiveOutput() {
 		for (int i = 0; i < streamsCnt; i++)

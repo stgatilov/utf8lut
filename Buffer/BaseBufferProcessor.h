@@ -3,9 +3,12 @@
 #include <string.h>
 #include <assert.h>
 
+class BasePlugin;
+
 class BaseBufferProcessor {
 public:
 	static const int MaxStreamsCount = 4;
+	static const int MaxPluginsCount = 2;
 	BaseBufferProcessor();
 
 	//shows how many output buffers are used (usually one)
@@ -43,6 +46,9 @@ public:
 	//number of bytes produced in output buffer
 	int GetOutputDoneSize(int index = 0) const;
 
+	//add input/output plugins to make some things easier
+	void AddPlugin(BasePlugin &addedPlugin);
+
 private:
 	virtual bool _Process() = 0;
 
@@ -54,4 +60,7 @@ private:
 	int inputDone;
 	int outputDone[MaxStreamsCount];
 	bool lastBlockMode;
+
+	BasePlugin *plugins[MaxPluginsCount];
+	int pluginsCount;
 };

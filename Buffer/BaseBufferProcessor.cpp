@@ -8,6 +8,7 @@ BaseBufferProcessor::BaseBufferProcessor() {
 	inputSize = 0;
 	memset(outputBuffer, 0, sizeof(outputBuffer));
 	memset(outputSize, 0, sizeof(outputSize));
+	pluginsCount = 0;
 	SetMode();
 }
 
@@ -55,10 +56,16 @@ void BaseBufferProcessor::SetMode(bool isLastBlock) {
 }
 
 bool BaseBufferProcessor::Process() {
+	for (int i = 0; i < pluginsCount; i++)
+		plugins[i]->Pre();
+
 	assert(CheckBuffers());
 	inputDone = 0;
 	memset(outputDone, 0, sizeof(outputDone));
-	return _Process();
+	bool res =  _Process();
+
+	for (int i = pluginsCount-1; i >= 0; i--)
+		plugins[i]->Post();
 }
 
 int BaseBufferProcessor::GetInputDoneSize() const {
@@ -67,4 +74,9 @@ int BaseBufferProcessor::GetInputDoneSize() const {
 
 int BaseBufferProcessor::GetOutputDoneSize(int index) const {
 	return outputDone[index];
+}
+
+void BaseBufferProcessor::AddPlugin(BasePlugin &addedPlugin) {
+	assert(pluginsCount < MaxPluginsCount);
+	plugins[pluginsCount++] = &addedPlugin;
 }
