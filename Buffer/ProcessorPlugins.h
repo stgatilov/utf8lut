@@ -1,9 +1,10 @@
 #pragma once
 
-#include "BaseBufferProcessor.h"
+#include "Buffer/BaseBufferProcessor.h"
 
 class BasePlugin {
 public:
+	virtual ~BasePlugin();
 	virtual void Pre() {}
 	virtual void Post() {}
 };
@@ -17,6 +18,7 @@ class ContiguousInput : public InputPlugin {
 	int srcSize;
 	int srcDone;
 	int chunkSize;
+	bool finished;
 
 public:
 	ContiguousInput(BaseBufferProcessor &owner, const char *buffer, int size) : processor(&owner) {
@@ -27,17 +29,22 @@ public:
 		processor->AddPlugin(*this);
 	}
 	virtual void Pre() {
+		assert(!finished);
 		int bytes = srcSize - srcDone;
 		if (bytes > chunkSize)
 			bytes = chunkSize;
 		processor->SetInputBuffer(srcBuffer + srcDone, bytes);
-		processor->SetMode(srcDone + bytes == srcSize);
+		finished = (srcDone + bytes == srcSize);
+		processor->SetMode(finished);
 	}
 	virtual void Post() {
 		srcDone += processor->GetInputDoneSize();
 	}
+	int GetRemainingDataSize() const {
+		return srcSize - srcDone;
+	}
 	bool Finished() const {
-		return srcDone == srcSize;
+		return finished;
 	}
 };
 

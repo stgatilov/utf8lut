@@ -34,22 +34,19 @@ enum DecoderMode {
 	dmAllCount,	//helper
 };
 
-template<int MaxBytes, int OutputType, int Mode, int StreamsNum, int BufferSize>
-class BufferDecoder {
+template<int MaxBytes, int OutputType, int Mode, int StreamsNum/*, int BufferSize*/>
+class BufferDecoder : public BaseBufferProcessor {
 public:
 	static const int StreamsNumber = DMAX(StreamsNum, 1);
 
 private:
-	static const int InputBufferSize = BufferSize;
-	static const int OutputBufferSize = (BufferSize / StreamsNumber + 4) * OutputType;
-	static const int MinBytesPerStream = 32;
 	static const bool Validate = (Mode == dmValidate);
 
-	char inputBuffer[InputBufferSize];
+/*	char inputBuffer[InputBufferSize];
 	char outputBuffer[StreamsNumber][OutputBufferSize];
 	int inputSize;							//total number of bytes stored in input buffer
 	int inputDone;							//number of (first) bytes processed from the input buffer
-	int outputSize[StreamsNumber];			//number of bytes stored in each output buffer
+	int outputSize[StreamsNumber];			//number of bytes stored in each output buffer*/
 
 	static FORCEINLINE bool ProcessSimple(const char *&inputPtr, const char *inputEnd, char *&outputPtr, bool isLastBlock) {
 		bool ok = true;
@@ -80,18 +77,18 @@ public:
 		static_assert(OutputType == 2 || OutputType == 4, "OutputType must be either 2 or 4");
 		static_assert(Mode >= 0 && Mode <= dmAllCount, "Mode must be from DecoderMode enum");
 		static_assert(StreamsNum == 0 || StreamsNum == 1 || StreamsNum == 4, "StreamsNum can be only 0, 1 or 4");
-		static_assert(InputBufferSize / StreamsNumber >= MinBytesPerStream, "BufferSize is too small");
-		Clear();
+//		static_assert(InputBufferSize / StreamsNumber >= MinBytesPerStream, "BufferSize is too small");
+		//Clear();
 	}
 
-	//start completely new compression
+/*	//start completely new compression
 	void Clear() {
 		inputSize = 0;
 		inputDone = 0;
 		for (int i = 0; i < StreamsNumber; i++) outputSize[i] = 0;
-	}
+	}*/
 
-	//switch from the just processed block to the next block
+/*	//switch from the just processed block to the next block
 	int GetUnprocessedBytesCount() const { return inputSize - inputDone; }
 	void GetOutputBuffer(const char *&outputStart, int &outputLen, int bufferIndex = 0) const {
 		outputStart = outputBuffer[bufferIndex];
@@ -110,12 +107,21 @@ public:
 	void AddInputSize(int inputSizeAdded) {
 		inputSize += inputSizeAdded;
 		assert(inputSize <= InputBufferSize);
+	}*/
+
+	virtual int GetStreamsCount() const {
+		return StreamsNumber;
+	}
+	virtual int GetInputBufferRecommendedSize() const {
+		return 1<<16;	//64KB
+	}
+	virtual int GetOutputBufferMinSize(int inputSize) const {
+		return (inputSize / StreamsNumber + 4) * OutputType;
 	}
 
-
-	//processing currently loaded block
-	bool Process(bool isLastBlock = true) {
+	virtual bool _Process() {
 		TIMING_START(DECODE);
+		static const int MinBytesPerStream = 32;	//more than 16 after split
 		if (StreamsNum > 1 && inputSize >= StreamsNum * MinBytesPerStream) {
 			assert(StreamsNum == 4);
 			const char *splits[StreamsNum + 1];
@@ -149,7 +155,7 @@ public:
 			#define STREAM_FINISH(k) \
 				bool ok##k = ProcessSimple(inputPtr##k, inputEnd##k, outputPtr##k, true); \
 				inputDone = inputPtr##k - inputBuffer; \
-				outputSize[k] = outputPtr##k - outputBuffer[k]; \
+				outputDone[k] = outputPtr##k - outputBuffer[k]; \
 				if (!ok##k) \
 					return false; \
 				if (k+1 < StreamsNum) assert(inputPtr##k == inputEnd##k);
@@ -163,11 +169,11 @@ public:
 			char *outputPtr = outputBuffer[0];
 			bool ok;
 			if (StreamsNum == 1) 
-				ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, isLastBlock);
+				ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, lastBlockMode);
 			else
 				ok = DecodeTrivial<OutputType>(inputPtr, inputBuffer + inputSize, outputPtr);
         	inputDone = inputPtr - inputBuffer;
-			outputSize[0] = outputPtr - outputBuffer[0];
+			outputDone[0] = outputPtr - outputBuffer[0];
 			if (!ok) return false;
 		}
 		TIMING_END(DECODE, inputDone);

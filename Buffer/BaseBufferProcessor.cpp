@@ -1,10 +1,13 @@
-#include "BaseBufferProcessor.h"
+#include "Buffer/BaseBufferProcessor.h"
+#include "Buffer/ProcessorPlugins.h"
 #include <string.h>
 #include <assert.h>
 #include <limits.h>
 
 BaseBufferProcessor::BaseBufferProcessor() {
 	Clear();
+}
+BaseBufferProcessor::~BaseBufferProcessor() {
 }
 
 void BaseBufferProcessor::Clear() {
@@ -71,6 +74,8 @@ bool BaseBufferProcessor::Process() {
 
 	for (int i = pluginsCount-1; i >= 0; i--)
 		plugins[i]->Post();
+
+	return res;
 }
 
 int BaseBufferProcessor::GetInputDoneSize() const {

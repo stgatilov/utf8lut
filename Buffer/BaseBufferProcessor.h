@@ -10,6 +10,7 @@ public:
 	static const int MaxStreamsCount = 4;
 	static const int MaxPluginsCount = 2;
 	BaseBufferProcessor();
+	virtual ~BaseBufferProcessor();
 
 	//reset to default state
 	void Clear();
