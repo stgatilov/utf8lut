@@ -74,6 +74,9 @@ public:
 		if (inputSet - inputDone > 0)
 			memmove(inputBuffer, inputBuffer + inputDone, inputSet - inputDone);
 	}
+	int GetRemainingDataSize() const {
+		return inputSet;
+	}
 };
 
 class ContiguousOutput : public OutputPlugin {
