@@ -1,5 +1,7 @@
 #pragma once
 
+#include "BaseBufferProcessor.h"
+
 class BasePlugin {
 public:
 	virtual void Pre() {}
