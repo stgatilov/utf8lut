@@ -50,6 +50,7 @@ private:
 	int outputSize[MaxStreamsCount];
 	int inputDone;
 	int outputDone[MaxStreamsCount];
+	bool lastBlockMode;
 };
 
 
@@ -59,8 +60,7 @@ BaseBufferProcessor::BaseBufferProcessor() {
 	inputSize = 0;
 	memset(outputBuffer, 0, sizeof(outputBuffer));
 	memset(outputSize, 0, sizeof(outputSize));
-	inputDone = 0;
-	memset(outputDone, 0, sizeof(outputDone));
+	SetMode();
 }
 
 
@@ -102,11 +102,15 @@ int BaseBufferProcessor::GetBufferMaxSize() const {
 	return INT_MAX / 8;
 }
 
-bool BaseBufferProcessor::Process(bool isLastBlock) {
+void BaseBufferProcessor::SetMode(bool isLastBlock) {
+	lastBlockMode = isLastBlock;
+}
+
+bool BaseBufferProcessor::Process() {
 	assert(CheckBuffers());
 	inputDone = 0;
 	memset(outputDone, 0, sizeof(outputDone));
-	return _Process(isLastBlock);
+	return _Process();
 }
 
 int BaseBufferProcessor::GetInputDoneSize() const {
