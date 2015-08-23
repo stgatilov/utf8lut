@@ -1,0 +1,7 @@
+syntax: glob
+*.exe
+*.obj
+*.asm
+*.txt
+*.fb2
+u8u16/*
