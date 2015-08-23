@@ -222,7 +222,7 @@ FORCEINLINE bool DecodeTrivial(const char *&pSource, char *&pDest, const char *p
 
 template<int MaxBytes, bool CheckExceed, bool Validate, int OutputType>
 struct DecoderCore {
-	FORCEINLINE bool operator()(const char *&ptrSource, char *&ptrDest, const char *RESTRICT lutTable = nullptr) {
+	FORCEINLINE bool operator()(const char *&ptrSource, char *&ptrDest) {
 		static_assert(!Validate || CheckExceed, "Validate core mode requires CheckExceed enabled");
 		const char *RESTRICT pSource = ptrSource;
 		char *RESTRICT pDest = ptrDest;
