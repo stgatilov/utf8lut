@@ -42,9 +42,11 @@ FORCEINLINE bool DecodeTrivial(const char *&pSource, char *&pDest, const char *p
 		} else {
 			*d++ = (uint16_t)codepoint;
 		}
-		pSource = (const char*)s;
-		pDest = (char*)d;
-		ok = (state == UTF8_ACCEPT);
+		if (state == UTF8_ACCEPT) {
+			pSource = (const char*)s;
+			pDest = (char*)d;
+			ok = true;
+		}
 	}
 
 	return ok;

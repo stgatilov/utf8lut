@@ -30,10 +30,6 @@ decode(uint32_t* state, uint32_t* codep, uint32_t byte) {
     (byte & 0x3fu) | (*codep << 6) :
     (0xff >> type) & (byte);
 
-/*  uint32_t left = (byte & 0x3fu) | (*codep << 6);
-  uint32_t right = (0xff >> type) & (byte);
-  *codep = (*state != UTF8_ACCEPT) ? left : right;*/
-
   *state = utf8d[256 + *state + type];
   return *state;
 }
