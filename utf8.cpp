@@ -22,21 +22,16 @@ struct ValidationInfo {
 };
 
 //a single entry of each LUT is defined
-template<bool Validate> struct LutEntry;
-template<> struct LutEntry<false> : CoreInfo {};
-template<> struct LutEntry<true> : LutEntry<false>, ValidationInfo {};
+struct LutEntryCore : CoreInfo {};
+struct LutEntryValidate : LutEntryCore, ValidationInfo {};
 
 //LUT tables are stored as global arrays (with templated access)
-template<bool Validate> struct LutTable {
-	typedef LutEntry<Validate> Entry;
-	static Entry m[32768];
-};
-LutEntry<false> LutTable<false>::m[32768];
-LutEntry<true> LutTable<true>::m[32768];
-#define LUT_REF(index, ...) \
-	*(LutEntry<true> *RESTRICT)( \
-		(const char *)(LutTable<__VA_ARGS__>::m) + \
-		(sizeof(LutEntry<__VA_ARGS__>)/2) * (index) \
+static CACHEALIGN LutEntryCore lutTableCore[32768];
+static CACHEALIGN LutEntryValidate lutTableValidate[32768];
+#define LUT_REF(index, validate) \
+	*(const LutEntryValidate *RESTRICT)( \
+		(validate ? (const char *)lutTableValidate : (const char *)lutTableCore) + \
+		( (validate ? sizeof(LutEntryValidate) : sizeof(LutEntryCore)) / 2) * (index) \
 	)
 
 //========================= Precomputation ==========================
@@ -106,14 +101,14 @@ void PrecomputeCreateEntry(const int *sizes, int num) {
 	//store info into all the lookup tables
 	assert(mask % 2 == 0);  mask /= 2;
 	{
-		LutEntry<false> &entry = LutTable<false>::m[mask];
+		LutEntryCore &entry = lutTableCore[mask];
 		entry.srcStep = preSum;
 		entry.dstStep = 2 * cnt;
 		entry.shufAB = _mm_loadu_si128((__m128i*)shufAB);
 		entry.shufC = _mm_loadu_si128((__m128i*)shufC);
 	}
 	{
-		LutEntry<true> &entry = LutTable<true>::m[mask];
+		LutEntryValidate &entry = lutTableValidate[mask];
 		entry.srcStep = preSum;
 		entry.dstStep = 2 * cnt;
 		entry.shufAB = _mm_loadu_si128((__m128i*)shufAB);
@@ -132,7 +127,7 @@ void PrecomputeLutRec(int *sizes, int num, int total) {
 }
 void PrecomputeLookupTable() {
 	//fill tables with empty values for BAD masks
-	LutEntry<true> empty;
+	LutEntryValidate empty;
 	empty.srcStep = 16;						//skip the whole 16-byte block on error
 	empty.dstStep = 0;						//do not move output pointer
 	empty.shufAB = _mm_set1_epi8(-1);		//produce zero symbols
@@ -140,8 +135,8 @@ void PrecomputeLookupTable() {
 	empty.headerMask = _mm_set1_epi8(-1);	//forbid any bytes except 11111110
 	empty.maxValues = _mm_set1_epi16(-1);	//forbid non-negative symbols values (zeros)
 	for (int i = 0; i < 32768; i++) {
-		LutTable<false>::m[i] = (const LutEntry<false> &)empty;
-		LutTable<true>::m[i] = empty;
+		lutTableCore[i] = (const LutEntryCore &)empty;
+		lutTableValidate[i] = empty;
 	}
 	//start recursive search for valid masks
 	int sizes[32];
@@ -264,7 +259,7 @@ struct DecoderCore {
 			uint32_t mask = _mm_movemask_epi8(_mm_cmplt_epi8(reg, _mm_set1_epi8(0xC0U)));
 			if (Validate && (mask & 1))
 				return false;
-			const LutEntry<true> &lookup = LUT_REF(mask, Validate);
+			const LutEntryValidate &lookup = LUT_REF(mask, Validate);
 
 			__m128i Rab = _mm_shuffle_epi8(reg, lookup.shufAB);
 			Rab = _mm_and_si128(Rab, _mm_setr_epi8(
@@ -474,7 +469,7 @@ public:
 //========================= Global operations ==========================
 
 const uint16_t BOM_UTF16 = 0xFEFFU;
-BufferDecoder<3, 2, dmValidate, 4, 1<<16> decoder;
+BufferDecoder<3, 2, dmFull, 4, 1<<16> decoder;
 
 int main() {
 	PrecomputeLookupTable();
