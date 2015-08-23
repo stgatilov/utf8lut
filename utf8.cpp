@@ -164,60 +164,47 @@ FORCEINLINE const char *FindBorder(const char *pSource) {
  * OutputType = 2, 4 		//UTF16/32
  */
 
-template<bool Validate, int OutputType>	//TODO: support validation
+namespace DfaUtf8 {
+	#include "dfa.h"
+}
+
+template<int OutputType>
 FORCEINLINE bool DecodeTrivial(const char *&pSource, char *&pDest, const char *pEnd) {
+	using namespace DfaUtf8;
 	assert(pSource <= pEnd);
-	while (pSource < pEnd) {
-		uint8_t first = *pSource;
 
-		int len;	//length of tail
-		if (first < 0x80U)
-			len = 0;
+	const uint8_t *RESTRICT s = (const uint8_t *)pSource;
+	uint16_t *RESTRICT d = (uint16_t *)pDest;
+	uint32_t codepoint;
+	uint32_t state = 0;
+
+	const uint8_t *ans_s = s;
+	uint16_t *ans_d = d;
+
+	while (s < (const uint8_t *)pEnd) {
+		if (decode(&state, &codepoint, *s++))
+			continue;
+		if (OutputType == 2) {
+			if (codepoint > 0xffff) {
+				*d++ = (uint16_t)(0xD7C0 + (codepoint >> 10));
+				*d++ = (uint16_t)(0xDC00 + (codepoint & 0x3FF));
+			} else {
+				*d++ = (uint16_t)codepoint;
+			}
+		}
 		else {
-			assert(first >= 0xC0U);
-			if (first < 0xE0U) {
-				len = 1;
-				first -= 0xC0U;
-			}
-			else if (first < 0xF0U) {
-				len = 2;
-				first -= 0xE0U;
-			}
-			else {
-				len = 3;
-				first -= 0xF0U;
-			}
+			*(uint32_t *)d = codepoint;
+			d += 2;
 		}
-
-		if (pSource + len+1 > pEnd)
-			break;
-
-		pSource++;
-		int val = first;
-		for (int j = 0; j < len; j++) {
-			uint8_t cont = *(pSource++);
-			val = (val << 6) + (cont - 0x80U);
-		}
-
-		if (OutputType == 2) {	//UTF-16
-			if (val < 0x10000) {
-				*(uint16_t*)pDest = val;
-				pDest += 2;
-			}
-			else {
-				val -= 0x10000;
-				*(uint16_t*)pDest = 0xD800 + (val >> 10);
-				pDest += 2;
-				*(uint16_t*)pDest = 0xDC00 + (val & 0x03FF);
-				pDest += 2;
-			}
-		}
-		else {	//UTF-32
-			*(uint32_t*)pDest = val;
-			pDest += 4;
+		if (state == UTF8_ACCEPT) {
+			ans_s = s;
+			ans_d = d;
 		}
 	}
-	return true;
+
+	pSource = (const char *)ans_s;
+	pDest = (char *)ans_d;
+	return state != UTF8_REJECT;
 }
 
 template<int MaxBytes, bool CheckExceed, bool Validate, int OutputType>
@@ -339,12 +326,12 @@ class BufferDecoder {
 			ok = DecoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, OutputType>()(inputPtr, outputPtr);
 			if (!ok) {
 				if (Mode != dmFast)
-					ok = DecodeTrivial<Mode == dmValidate, OutputType>(inputPtr, outputPtr, inputPtr + 16);
+					ok = DecodeTrivial<OutputType>(inputPtr, outputPtr, inputPtr + 16);
 				if (!ok) break;
 			}
 		}
 		if (isLastBlock)
-			ok = DecodeTrivial<Mode == dmValidate, OutputType>(inputPtr, outputPtr, inputEnd);
+			ok = DecodeTrivial<OutputType>(inputPtr, outputPtr, inputEnd);
 		return ok;
 	}
 
