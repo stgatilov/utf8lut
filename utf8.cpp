@@ -20,10 +20,16 @@
 //#endif
 
 struct CoreInfo {
-	uint32_t srcStep;		//number of bytes processed in input buffer
-	uint32_t dstStep;		//number of symbols produced in output buffer (doubled)
-	__m128i shufAB;			//shuffling mask to get lower two bytes of symbols
-	__m128i shufC;			//shuffling mask to get third bytes of symbols
+	__m128i shufAB;						//shuffling mask to get lower two bytes of symbols
+	union {
+		__m128i shufC;					//shuffling mask to get third bytes of symbols
+		struct {
+			uint32_t _shufC_part0;
+			uint32_t _shufC_part1;
+			uint32_t srcStep;			//number of bytes processed in input buffer
+			uint32_t dstStep;			//number of symbols produced in output buffer (doubled)
+		};
+	};
 };
 struct ValidationInfo {
     __m128i headerMask;		//mask of "111..10" bits required in each byte
@@ -83,7 +89,7 @@ void PrecomputeCreateEntry(const int *sizes, int num) {
 			if (j < 2)
 				shufAB[2 * i + j] = pos++;
 			else
-				shufC[2 * i] = pos++;
+				shufC[i] = pos++;
 		}
 	}
 	assert(pos <= 16);
@@ -114,17 +120,17 @@ void PrecomputeCreateEntry(const int *sizes, int num) {
 	assert(mask % 2 == 0);  mask /= 2;
 	{
 		LutEntryCore &entry = lutTableCore[mask];
-		entry.srcStep = preSum;
-		entry.dstStep = 2 * cnt;
 		entry.shufAB = _mm_loadu_si128((__m128i*)shufAB);
 		entry.shufC = _mm_loadu_si128((__m128i*)shufC);
+		entry.srcStep = preSum;
+		entry.dstStep = 2 * cnt;
 	}
 	{
 		LutEntryValidate &entry = lutTableValidate[mask];
-		entry.srcStep = preSum;
-		entry.dstStep = 2 * cnt;
 		entry.shufAB = _mm_loadu_si128((__m128i*)shufAB);
 		entry.shufC = _mm_loadu_si128((__m128i*)shufC);
+		entry.srcStep = preSum;
+		entry.dstStep = 2 * cnt;
 		entry.headerMask = _mm_loadu_si128((__m128i*)headerMask);
 		entry.maxValues = _mm_loadu_si128((__m128i*)maxValues);
 	}
@@ -268,7 +274,8 @@ struct DecoderCore {
 			__m128i sum = Rab;
 
 			if (MaxBytes == 3) {
-				__m128i Rc = _mm_shuffle_epi8(reg, lookup->shufC);
+				__m128i shufC = _mm_unpacklo_epi8(lookup->shufC, lookup->shufC);
+				__m128i Rc = _mm_shuffle_epi8(reg, shufC);
 				Rc = _mm_slli_epi16(Rc, 12);
 				sum = _mm_add_epi16(sum, Rc);
 			}
