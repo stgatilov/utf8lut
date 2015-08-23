@@ -239,7 +239,7 @@ struct DecoderCore {
 			__m128i reg = _mm_loadu_si128((__m128i*)pSource);
 			if (CheckExceed && !Validate) {
 				__m128i pl = _mm_add_epi8(reg, _mm_set1_epi8(0x80U));
-				if (_mm_movemask_epi8(_mm_cmplt_epi8(pl, _mm_set1_epi8(MaxBytes == 3 ? 0x70 : 0x60))) != 0xFFFF)
+				if (_mm_movemask_epi8(_mm_cmpgt_epi8(pl, _mm_set1_epi8(MaxBytes == 3 ? 0x6F : 0x5F))))
 					return false;
 			}
 
