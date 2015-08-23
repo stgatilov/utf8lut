@@ -10,6 +10,15 @@
 	#include "BOM_Profiler.h"
 #endif
 
+#ifdef SSE4
+	#include "smmintrin.h"
+	#define _mm_cmp_allzero(reg) _mm_test_all_zeros(reg, reg)
+	#define _mm_cmp_allone(reg) _mm_test_all_ones(reg)
+#else
+	#define _mm_cmp_allzero(reg) (_mm_movemask_epi8(reg) == 0)
+	#define _mm_cmp_allone(reg) (_mm_movemask_epi8(reg) == 0xFFFF)
+#endif
+
 struct CoreInfo {
 	uint32_t srcStep;		//number of bytes processed in input buffer
 	uint32_t dstStep;		//number of symbols produced in output buffer (doubled)
@@ -239,7 +248,8 @@ struct DecoderCore {
 			__m128i reg = _mm_loadu_si128((__m128i*)pSource);
 			if (CheckExceed && !Validate) {
 				__m128i pl = _mm_add_epi8(reg, _mm_set1_epi8(0x80U));
-				if (_mm_movemask_epi8(_mm_cmpgt_epi8(pl, _mm_set1_epi8(MaxBytes == 3 ? 0x6F : 0x5F))))
+				__m128i cmpRes = _mm_cmpgt_epi8(pl, _mm_set1_epi8(MaxBytes == 3 ? 0x6F : 0x5F));
+				if (!_mm_cmp_allzero(cmpRes))
 					return false;
 			}
 
@@ -271,7 +281,8 @@ struct DecoderCore {
 				__m128i overlongSymbol = _mm_cmpgt_epi16(sum, lookup.maxValues);
 				if (MaxBytes == 2)
 					hdrCorrect = _mm_and_si128(hdrCorrect, lookup.shufC);	//forbid 3-byte symbols
-				if (_mm_movemask_epi8(_mm_andnot_si128(overlongSymbol, hdrCorrect)) != 0xFFFF)
+				__m128i allCorr = _mm_andnot_si128(overlongSymbol, hdrCorrect);	
+				if (!_mm_cmp_allone(allCorr))
 					return false;
 			}
 
@@ -456,7 +467,7 @@ public:
 //========================= Global operations ==========================
 
 const uint16_t BOM_UTF16 = 0xFEFFU;
-BufferDecoder<3, 2, dmFull, 4, 1<<16> decoder;
+BufferDecoder<3, 2, dmValidate, 4, 1<<16> decoder;
 
 int main() {
 	PrecomputeLookupTable();
