@@ -283,9 +283,10 @@ struct DecoderCore {
 				__m128i hdrRef = _mm_add_epi8(byteMask, byteMask);
 				__m128i hdrCorrect = _mm_cmpeq_epi8(header, hdrRef);
 				__m128i overlongSymbol = _mm_cmpgt_epi16(sum, lookup->maxValues);
+				__m128i surrogate = _mm_cmpgt_epi16(_mm_sub_epi16(sum, _mm_set1_epi16(0x6000)), _mm_set1_epi16(0x77FF));
 				if (MaxBytes == 2)
 					hdrCorrect = _mm_and_si128(hdrCorrect, lookup->shufC);	//forbid 3-byte symbols
-				__m128i allCorr = _mm_andnot_si128(overlongSymbol, hdrCorrect);	
+				__m128i allCorr = _mm_andnot_si128(_mm_or_si128(overlongSymbol, surrogate), hdrCorrect);
 				if (!_mm_cmp_allone(allCorr))
 					return false;
 			}
@@ -473,7 +474,7 @@ public:
 //========================= Global operations ==========================
 
 const uint16_t BOM_UTF16 = 0xFEFFU;
-BufferDecoder<3, 2, dmFull, 4, 1<<16> decoder;
+BufferDecoder<3, 2, dmValidate, 4, 1<<16> decoder;
 
 int main() {
 	PrecomputeLookupTable();
