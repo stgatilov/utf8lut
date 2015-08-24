@@ -37,10 +37,13 @@ struct LutEntryValidate : LutEntryCore, ValidationInfo {};
 //LUT tables are stored as global arrays (with templated access)
 static CACHEALIGN LutEntryCore lutTableCore[32768];
 static CACHEALIGN LutEntryValidate lutTableValidate[32768];
-#define LUT_REF(index, validate) \
-	*(const LutEntryValidate *RESTRICT)( \
-		(validate ? (const char *)lutTableValidate : (const char *)lutTableCore) + \
-		( (validate ? sizeof(LutEntryValidate) : sizeof(LutEntryCore)) / 2) * (index) \
+#define LUT_TABLE(validate) \
+	(validate ? lutTableValidate : lutTableCore)
+#define LUT_STRIDE(validate) \
+	((validate ? sizeof(LutEntryValidate) : sizeof(LutEntryCore)) / 2)
+#define LUT_ACCESS(ptr, index, stride) \
+	(const LutEntryValidate *)( \
+		(const char *)(ptr) + (stride) * (index) \
 	)
 
 //========================= Precomputation ==========================
@@ -218,7 +221,7 @@ FORCEINLINE bool DecodeTrivial(const char *&pSource, char *&pDest, const char *p
 
 template<int MaxBytes, bool CheckExceed, bool Validate, int OutputType>
 struct DecoderCore {
-	FORCEINLINE bool operator()(const char *&ptrSource, char *&ptrDest) {
+	FORCEINLINE bool operator()(const char *&ptrSource, char *&ptrDest, const LutEntryCore *RESTRICT lutTable) {
 		static_assert(!Validate || CheckExceed, "Validate core mode requires CheckExceed enabled");
 		const char *RESTRICT pSource = ptrSource;
 		char *RESTRICT pDest = ptrDest;
@@ -256,9 +259,10 @@ struct DecoderCore {
 			uint32_t mask = _mm_movemask_epi8(_mm_cmplt_epi8(reg, _mm_set1_epi8(0xC0U)));
 			if (Validate && (mask & 1))
 				return false;
-			const LutEntryValidate &lookup = LUT_REF(mask, Validate);
+			static const int stride = LUT_STRIDE(Validate);
+			const LutEntryValidate *RESTRICT lookup = LUT_ACCESS(lutTable, mask, stride);
 
-			__m128i Rab = _mm_shuffle_epi8(reg, lookup.shufAB);
+			__m128i Rab = _mm_shuffle_epi8(reg, lookup->shufAB);
 			Rab = _mm_and_si128(Rab, _mm_setr_epi8(
 				0x7F, 0x3F, 0x7F, 0x3F, 0x7F, 0x3F, 0x7F, 0x3F, 0x7F, 0x3F, 0x7F, 0x3F, 0x7F, 0x3F, 0x7F, 0x3F
 			));
@@ -268,19 +272,19 @@ struct DecoderCore {
 			__m128i sum = Rab;
 
 			if (MaxBytes == 3) {
-				__m128i Rc = _mm_shuffle_epi8(reg, lookup.shufC);
+				__m128i Rc = _mm_shuffle_epi8(reg, lookup->shufC);
 				Rc = _mm_slli_epi16(Rc, 12);
 				sum = _mm_add_epi16(sum, Rc);
 			}
 
 			if (Validate) {
-				__m128i byteMask = lookup.headerMask;
+				__m128i byteMask = lookup->headerMask;
 				__m128i header = _mm_and_si128(reg, byteMask);
 				__m128i hdrRef = _mm_add_epi8(byteMask, byteMask);
 				__m128i hdrCorrect = _mm_cmpeq_epi8(header, hdrRef);
-				__m128i overlongSymbol = _mm_cmpgt_epi16(sum, lookup.maxValues);
+				__m128i overlongSymbol = _mm_cmpgt_epi16(sum, lookup->maxValues);
 				if (MaxBytes == 2)
-					hdrCorrect = _mm_and_si128(hdrCorrect, lookup.shufC);	//forbid 3-byte symbols
+					hdrCorrect = _mm_and_si128(hdrCorrect, lookup->shufC);	//forbid 3-byte symbols
 				__m128i allCorr = _mm_andnot_si128(overlongSymbol, hdrCorrect);	
 				if (!_mm_cmp_allone(allCorr))
 					return false;
@@ -293,8 +297,8 @@ struct DecoderCore {
 				_mm_storeu_si128((__m128i*)pDest + 0, _mm_unpacklo_epi16(sum, zero));
 				_mm_storeu_si128((__m128i*)pDest + 1, _mm_unpackhi_epi16(sum, zero));
 			}
-			ptrSource += lookup.srcStep;
-			ptrDest += lookup.dstStep * (OutputType/2);
+			ptrSource += lookup->srcStep;
+			ptrDest += lookup->dstStep * (OutputType/2);
 
 			return true;
 		}
@@ -333,8 +337,9 @@ class BufferDecoder {
 
 	static FORCEINLINE bool ProcessSimple(const char *&inputPtr, const char *inputEnd, char *&outputPtr, bool isLastBlock) {
 		bool ok = true;
+		const LutEntryCore *RESTRICT ptrTable = LUT_TABLE(Mode == dmValidate);
 		while (inputPtr <= inputEnd - 16) {
-			ok = DecoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, OutputType>()(inputPtr, outputPtr);
+			ok = DecoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, OutputType>()(inputPtr, outputPtr, ptrTable);
 			if (!ok) {
 				if (Mode != dmFast)
 					ok = DecodeTrivial<OutputType>(inputPtr, outputPtr, inputPtr + 16);
@@ -412,6 +417,7 @@ public:
 			assert(StreamsNum == 4);
 			const char *splits[StreamsNum + 1];
 			SplitRange(inputBuffer, inputSize, splits);
+			const LutEntryCore *RESTRICT ptrTable = LUT_TABLE(Mode == dmValidate);
 			#define STREAM_START(k) \
 				const char *inputStart##k = splits[k]; \
 				const char *inputEnd##k = splits[k+1]; \
@@ -430,7 +436,7 @@ public:
 				STREAM_CHECK(2);
 				STREAM_CHECK(3);
 				#define STREAM_STEP(k) \
-					bool ok##k = DecoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, OutputType>()(inputPtr##k, outputPtr##k); \
+					bool ok##k = DecoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, OutputType>()(inputPtr##k, outputPtr##k, ptrTable); \
 					if (!ok##k) break;
 				STREAM_STEP(0);
 				STREAM_STEP(1);
@@ -467,7 +473,7 @@ public:
 //========================= Global operations ==========================
 
 const uint16_t BOM_UTF16 = 0xFEFFU;
-BufferDecoder<3, 2, dmValidate, 4, 1<<16> decoder;
+BufferDecoder<3, 2, dmFull, 4, 1<<16> decoder;
 
 int main() {
 	PrecomputeLookupTable();
