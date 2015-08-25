@@ -10,14 +10,14 @@
 	#include "BOM_Profiler.h"
 #endif
 
-#ifdef SSE4
+/*#ifdef SSE4	//note: ptest instruction is slower than pmovmskb + cmp
 	#include "smmintrin.h"
 	#define _mm_cmp_allzero(reg) _mm_test_all_zeros(reg, reg)
 	#define _mm_cmp_allone(reg) _mm_test_all_ones(reg)
-#else
+#else*/
 	#define _mm_cmp_allzero(reg) (_mm_movemask_epi8(reg) == 0)
 	#define _mm_cmp_allone(reg) (_mm_movemask_epi8(reg) == 0xFFFF)
-#endif
+//#endif
 
 struct CoreInfo {
 	uint32_t srcStep;		//number of bytes processed in input buffer
