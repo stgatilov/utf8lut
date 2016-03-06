@@ -59,29 +59,39 @@ struct EncoderCore {
 			pDest += lookup->dstStep;
 		}
 		else if (MaxBytes == 3) {
-			//levels of bytes
+/*			//levels of bytes
 			__m128i levelA = reg;
 			__m128i levelB = _mm_srli_epi16(reg, 6);
 			__m128i levelC = _mm_srli_epi16(reg, 12);
 			//put all bytes of each half into a register
 			__m128i levAB = _mm_xor_si128(_mm_slli_epi16(levelB, 8), _mm_and_si128(levelA, _mm_set1_epi16(0x00FF)));
 			__m128i levels0 = _mm_unpacklo_epi64(levAB, levelC);
-			__m128i levels1 = _mm_unpackhi_epi64(levAB, levelC);
+			__m128i levels1 = _mm_unpackhi_epi64(levAB, levelC);*/
+			//levels of bytes
+			__m128i levAC = _mm_maddubs_epi16(_mm_and_si128(reg, _mm_set1_epi16(0xF0FFU)), _mm_set1_epi16(0x1001U));
+			__m128i levelB = _mm_srli_epi16(reg, 6);
+			//put all bytes of each half into a register
+			__m128i levels0 = _mm_unpacklo_epi64(levAC, levelB);
+			__m128i levels1 = _mm_unpackhi_epi64(levAC, levelB);
 
 			//check which symbols are long
 			__m128i regS = _mm_sub_epi16(reg, _mm_set1_epi16(0x8000U));
 			__m128i lenGe2 = _mm_cmpgt_epi16(regS, _mm_set1_epi16(0x807FU));
 			__m128i lenGe3 = _mm_cmpgt_epi16(regS, _mm_set1_epi16(0x87FFU));
-			//compose lens masks for lookup
+/*			//compose lens masks for lookup
 			__m128i lens0 = _mm_unpacklo_epi64(lenGe2, lenGe3);
 			__m128i lens1 = _mm_unpackhi_epi64(lenGe2, lenGe3);
 			//make masks compact
-			__m128i ctrlMask = _mm_setr_epi8(0, 2, 4, 6, 8, 10, 12, 14, -1, -1, -1, -1, -1, -1, -1, -1);
+			__m128i ctrlMask = _mm_setr_epi8(-1, -1, -1, -1, -1, 0, 2, 4, 6, 8, 10, 12, 14, -1, -1, -1);
 			__m128i lens0p = _mm_shuffle_epi8(lens0, ctrlMask);
 			__m128i lens1p = _mm_shuffle_epi8(lens1, ctrlMask);
-			//get byte offsets into lookup table	//TODO: make them really byte offsets (i.e. mul x32)
+			//get byte offsets into lookup table
 			uint32_t offset0 = _mm_movemask_epi8(lens0p);
-			uint32_t offset1 = _mm_movemask_epi8(lens1p);
+			uint32_t offset1 = _mm_movemask_epi8(lens1p);*/
+			__m128i lensMix = _mm_xor_si128(_mm_slli_epi16(lenGe2, 8), lenGe3);
+			uint32_t allMask = _mm_movemask_epi8(lensMix);
+			uint32_t offset0 = (allMask & 255U) * 32U;
+			uint32_t offset1 = (allMask >> 8U) * 32U;
 		
 			//load info from LUT
 			const LutEntryEncode *RESTRICT lookup0 = LUT_ACCESS(lutTable, offset0); //&lutTable[offset0];
