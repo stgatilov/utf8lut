@@ -45,5 +45,6 @@ int main() {
 	fclose(fi);
 	fclose(fo);
 
+	TIMING_PRINT();
 	return 0;
 }

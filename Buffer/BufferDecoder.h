@@ -6,10 +6,7 @@
 #include "Core/DecoderLut.h"
 #include "Core/DecoderProcess.h"
 #include "Core/DfaProcess.h"
-
-#ifdef TIMING
-	#include "Base/BOM_Profiler.h"
-#endif
+#include "Base/Timing.h"
 
 namespace DecoderUtf8 {
 
@@ -50,9 +47,6 @@ class BufferDecoder {
 	int inputSize;							//total number of bytes stored in input buffer
 	int inputDone;							//number of (first) bytes processed from the input buffer
 	int outputSize[StreamsNum];				//number of bytes stored in each output buffer
-#ifdef TIMING
-	BOM_Table *timings;						//only for timings
-#endif
 
 	static FORCEINLINE bool ProcessSimple(const char *&inputPtr, const char *inputEnd, char *&outputPtr, bool isLastBlock) {
 		bool ok = true;
@@ -87,15 +81,6 @@ public:
 		static_assert(StreamsNum == 1 || StreamsNum == 4, "StreamsNum can be only 1 or 4");
 		static_assert(InputBufferSize / StreamsNum >= MinBytesPerStream, "BufferSize is too small");
 		Clear();
-#ifdef TIMING
-		timings = init_BOM_timer();
-#endif
-	}
-	~BufferDecoder() {
-#ifdef TIMING
-		dump_BOM_table(timings);
-		free(timings);
-#endif
 	}
 
 	//start completely new compression
@@ -129,9 +114,7 @@ public:
 
 	//processing currently loaded block
 	bool Process(bool isLastBlock = true) {
-#ifdef TIMING
-		start_BOM_interval(timings);
-#endif
+		TIMING_START("Decode");
 		if (StreamsNum > 1 && inputSize >= StreamsNum * MinBytesPerStream) {
 			assert(StreamsNum == 4);
 			const char *splits[StreamsNum + 1];
@@ -182,9 +165,7 @@ public:
 			outputSize[0] = outputPtr - outputBuffer[0];
 			if (!ok) return false;
 		}
-#ifdef TIMING
-		end_BOM_interval(timings, inputDone);
-#endif
+		TIMING_END("Decode", inputDone);
 		return true;
 	}
 };

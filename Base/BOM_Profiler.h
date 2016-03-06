@@ -36,7 +36,9 @@ files.
 #ifndef BOM_Profiler_H
 #define BOM_Profiler_H
 
-
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "i386_timer.h"
 
 #define BIT_COUNT 64
@@ -55,7 +57,7 @@ struct BOM_Table {
 
 typedef struct BOM_Table BOM_Table;
 
-BOM_Table * init_BOM_timer () {
+inline BOM_Table * init_BOM_timer () {
   BOM_Table * timer_table = (BOM_Table *) malloc(sizeof(BOM_Table));
   if (!timer_table) {
     printf("Couldn't initialize BOM timer.\n");
@@ -88,7 +90,7 @@ static inline void end_BOM_interval(BOM_Table * timer_table, unsigned int elems)
   	fprintf(stderr,"Time interval end without a start!\n"); 
 }
 
-void dump_BOM_table(BOM_Table * timer_table) {
+inline void dump_BOM_table(BOM_Table * timer_table) {
   // an array of counts and timings per binary order of magnitude
   int BOM_count[BIT_COUNT];
   unsigned int BOM_elems[BIT_COUNT];  
