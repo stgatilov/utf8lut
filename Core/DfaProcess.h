@@ -8,7 +8,7 @@ namespace DfaUtf8 {
 }
 
 template<int OutputType>
-FORCEINLINE bool DecodeTrivial(const char *&pSource, char *&pDest, const char *pEnd) {
+FORCEINLINE bool DecodeTrivial(const char *&pSource, const char *pEnd, char *&pDest) {
 	using namespace DfaUtf8;
 	assert(pSource <= pEnd);
 

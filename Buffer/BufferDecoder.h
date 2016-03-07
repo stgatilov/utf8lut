@@ -24,7 +24,7 @@ FORCEINLINE const char *FindBorder(const char *pSource) {
 
 /**params:
  * maxBytes = 1, 2, 3
- * numStreams = 1, 4
+ * numStreams = 0, 1, 4
  * validate = false, true
  * mode = fast, full, validate
  */
@@ -38,15 +38,19 @@ enum DecoderMode {
 
 template<int MaxBytes, int OutputType, int Mode, int StreamsNum, int BufferSize>
 class BufferDecoder {
+public:
+	static const int StreamsNumber = DMAX(StreamsNum, 1);
+
+private:
 	static const int InputBufferSize = BufferSize;
-	static const int OutputBufferSize = (BufferSize / StreamsNum + 4) * OutputType;
+	static const int OutputBufferSize = (BufferSize / StreamsNumber + 4) * OutputType;
 	static const int MinBytesPerStream = 32;
 
 	char inputBuffer[InputBufferSize];
-	char outputBuffer[StreamsNum][OutputBufferSize];
+	char outputBuffer[StreamsNumber][OutputBufferSize];
 	int inputSize;							//total number of bytes stored in input buffer
 	int inputDone;							//number of (first) bytes processed from the input buffer
-	int outputSize[StreamsNum];				//number of bytes stored in each output buffer
+	int outputSize[StreamsNumber];			//number of bytes stored in each output buffer
 
 	static FORCEINLINE bool ProcessSimple(const char *&inputPtr, const char *inputEnd, char *&outputPtr, bool isLastBlock) {
 		bool ok = true;
@@ -55,31 +59,29 @@ class BufferDecoder {
 			ok = DecoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, OutputType>()(inputPtr, outputPtr, ptrTable);
 			if (!ok) {
 				if (Mode != dmFast)
-					ok = DecodeTrivial<OutputType>(inputPtr, outputPtr, inputPtr + 16);
+					ok = DecodeTrivial<OutputType>(inputPtr, inputPtr + 16, outputPtr);
 				if (!ok) break;
 			}
 		}
 		if (isLastBlock)
-			ok = DecodeTrivial<OutputType>(inputPtr, outputPtr, inputEnd);
+			ok = DecodeTrivial<OutputType>(inputPtr, inputEnd, outputPtr);
 		return ok;
 	}
 
 	static FORCEINLINE void SplitRange(const char *buffer, int size, const char *splits[]) {
 		splits[0] = buffer;
-		splits[StreamsNum] = buffer + size;
-		for (int k = 1; k < StreamsNum; k++)
-			splits[k] = FindBorder(buffer + uint32_t(k * size) / StreamsNum);
+		splits[StreamsNumber] = buffer + size;
+		for (int k = 1; k < StreamsNumber; k++)
+			splits[k] = FindBorder(buffer + uint32_t(k * size) / StreamsNumber);
 	}
-
 public:
-	static const int StreamsNumber = StreamsNum;
 
 	BufferDecoder() {
 		static_assert(MaxBytes >= 1 && MaxBytes <= 3, "MaxBytes must be between 1 and 3");
 		static_assert(OutputType == 2 || OutputType == 4, "OutputType must be either 2 or 4");
 		static_assert(Mode >= 0 && Mode <= dmAllCount, "Mode must be from DecoderMode enum");
-		static_assert(StreamsNum == 1 || StreamsNum == 4, "StreamsNum can be only 1 or 4");
-		static_assert(InputBufferSize / StreamsNum >= MinBytesPerStream, "BufferSize is too small");
+		static_assert(StreamsNum == 0 || StreamsNum == 1 || StreamsNum == 4, "StreamsNum can be only 0, 1 or 4");
+		static_assert(InputBufferSize / StreamsNumber >= MinBytesPerStream, "BufferSize is too small");
 		Clear();
 	}
 
@@ -87,7 +89,7 @@ public:
 	void Clear() {
 		inputSize = 0;
 		inputDone = 0;
-		for (int i = 0; i < StreamsNum; i++) outputSize[i] = 0;
+		for (int i = 0; i < StreamsNumber; i++) outputSize[i] = 0;
 	}
 
 	//switch from the just processed block to the next block
@@ -100,7 +102,7 @@ public:
 		memmove(inputBuffer, inputBuffer + inputDone, inputSize - inputDone);
 		inputSize = inputSize - inputDone;
 		inputDone = 0;
-		for (int i = 0; i < StreamsNum; i++) outputSize[i] = 0;
+		for (int i = 0; i < StreamsNumber; i++) outputSize[i] = 0;
 	}
 	void GetInputBuffer(char *&inputStart, int &inputMaxSize) {
 		inputStart = inputBuffer + inputSize;
@@ -160,7 +162,11 @@ public:
 		else {
 			const char *RESTRICT inputPtr = inputBuffer;
 			char *RESTRICT outputPtr = outputBuffer[0];
-			bool ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, isLastBlock);
+			bool ok;
+			if (StreamsNum == 1) 
+				ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, isLastBlock);
+			else
+				ok = DecodeTrivial<OutputType>(inputPtr, inputBuffer + inputSize, outputPtr);
         	inputDone = inputPtr - inputBuffer;
 			outputSize[0] = outputPtr - outputBuffer[0];
 			if (!ok) return false;
