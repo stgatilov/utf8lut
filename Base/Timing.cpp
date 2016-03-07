@@ -1,3 +1,3 @@
 #include "Base/Timing.h"
 
-BOM_Table *timingData = 0;
+TimingData timingData = TimingData();

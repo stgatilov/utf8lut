@@ -114,7 +114,7 @@ public:
 
 	//processing currently loaded block
 	bool Process(bool isLastBlock = true) {
-		TIMING_START("Decode");
+		TIMING_START(DECODE);
 		if (StreamsNum > 1 && inputSize >= StreamsNum * MinBytesPerStream) {
 			assert(StreamsNum == 4);
 			const char *splits[StreamsNum + 1];
@@ -165,7 +165,7 @@ public:
 			outputSize[0] = outputPtr - outputBuffer[0];
 			if (!ok) return false;
 		}
-		TIMING_END("Decode", inputDone);
+		TIMING_END(DECODE, inputDone);
 		return true;
 	}
 };
