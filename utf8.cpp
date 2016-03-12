@@ -17,6 +17,8 @@ BufferDecoder<3, 2, dmValidate, 4, 1<<16> decoder;
 int main() {
 	PrecomputeLookupTable();
 
+for (int run = 0; run < 100; run++) {
+
 	FILE *fi = fopen("input.txt", "rb");
 	FILE *fo = fopen("output.txt", "wb");
 	decoder.Clear();
@@ -44,6 +46,7 @@ int main() {
 	assert(decoder.GetUnprocessedBytesCount() == 0);
 	fclose(fi);
 	fclose(fo);
+}
 
 	TIMING_PRINT();
 	return 0;
