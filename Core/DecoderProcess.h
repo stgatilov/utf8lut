@@ -43,7 +43,7 @@ struct DecoderCore {
 		else {	//MaxBytes = 2 or 3
 			__m128i reg = _mm_loadu_si128((__m128i*)pSource);
 			if (CheckExceed && !Validate) {
-				__m128i pl = _mm_add_epi8(reg, _mm_set1_epi8(0x80U));	//TODO: xor
+				__m128i pl = _mm_xor_si128(reg, _mm_set1_epi8(0x80U));	//_mm_sub_epi8
 				__m128i cmpRes = _mm_cmpgt_epi8(pl, _mm_set1_epi8(MaxBytes == 3 ? 0x6F : 0x5F));
 				if (!_mm_cmp_allzero(cmpRes))
 					return false;
