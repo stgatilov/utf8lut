@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core/PerfDefs.h"
+#include "Base/PerfDefs.h"
 #include <tmmintrin.h>
 
 /** template params:
@@ -12,12 +12,13 @@
 
 template<int MaxBytes, bool CheckExceed, bool Validate, int InputType>
 struct EncoderCore {
-	FORCEINLINE bool operator()(const char *&ptrSource, char *&ptrDest, const LutEntryEncode *RESTRICT lutTable) {
+	FORCEINLINE bool operator()(const char *&ptrSource, char *&ptrDest, const EncoderLutEntry *RESTRICT lutTable) {
 		static_assert(!Validate || CheckExceed, "Validate core mode requires CheckExceed enabled");
 		const char *RESTRICT pSource = ptrSource;
 		char *RESTRICT pDest = ptrDest;
 		
 		__m128i reg = _mm_loadu_si128((const __m128i *)pSource);
+		ptrSource += 16;
 
 		if (MaxBytes == 2) {
 			//levels of bytes
@@ -37,7 +38,7 @@ struct EncoderCore {
 			uint32_t index = _mm_movemask_epi8(lensAll);
 		
 			//load info from LUT
-			const LutEntryEncode *RESTRICT lookup = LUT_ACCESS(lutTable, index * 64);
+			const EncoderLutEntry *RESTRICT lookup = &lutTable[index];
 			//shuffle bytes to compact layout
 			__m128i res = _mm_shuffle_epi8(levBA, lookup->shuf);
 			//add headers to all bytes
@@ -85,8 +86,8 @@ struct EncoderCore {
 			uint32_t offset1 = (allMask >> 8U) * 32U;
 		
 			//load info from LUT
-			const LutEntryEncode *RESTRICT lookup0 = LUT_ACCESS(lutTable, offset0); //&lutTable[offset0];
-			const LutEntryEncode *RESTRICT lookup1 = LUT_ACCESS(lutTable, offset1); //&lutTable[offset1];
+			const EncoderLutEntry *RESTRICT lookup0 = 0;//LUT_ACCESS(lutTable, offset0); //&lutTable[offset0];
+			const EncoderLutEntry *RESTRICT lookup1 = 0;//LUT_ACCESS(lutTable, offset1); //&lutTable[offset1];
 			//shuffle bytes of each half to compact layout
 			__m128i res0 = _mm_shuffle_epi8(levels0, lookup0->shuf);
 			__m128i res1 = _mm_shuffle_epi8(levels1, lookup1->shuf);
@@ -105,8 +106,7 @@ struct EncoderCore {
 			pDest += lookup1->dstStep;
 		}
 
-		//save new addresses
-		ptrSource += 16;
+		//save new destination address
 		ptrDest = pDest;
 		return true;
 	}
