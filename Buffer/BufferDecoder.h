@@ -21,10 +21,10 @@ FORCEINLINE const char *FindUtf8Border(const char *pSource) {
 }
 
 /**params:
- * maxBytes = 1, 2, 3
- * numStreams = 0, 1, 4
- * validate = false, true
- * mode = fast, full, validate
+ * MaxBytes = 1, 2, 3
+ * StreamsNum = 0, 1, 4
+ * Mode = fast, full, validate
+ * OutputType = 2, 4
  */
 
 enum DecoderMode {
@@ -38,12 +38,12 @@ template<int MaxBytes, int OutputType, int Mode, int StreamsNum, int BufferSize>
 class BufferDecoder {
 public:
 	static const int StreamsNumber = DMAX(StreamsNum, 1);
-	static const bool Validate = (Mode == dmValidate);
 
 private:
 	static const int InputBufferSize = BufferSize;
 	static const int OutputBufferSize = (BufferSize / StreamsNumber + 4) * OutputType;
 	static const int MinBytesPerStream = 32;
+	static const bool Validate = (Mode == dmValidate);
 
 	char inputBuffer[InputBufferSize];
 	char outputBuffer[StreamsNumber][OutputBufferSize];
@@ -105,7 +105,7 @@ public:
 	}
 	void GetInputBuffer(char *&inputStart, int &inputMaxSize) {
 		inputStart = inputBuffer + inputSize;
-		inputMaxSize = BufferSize - inputSize;
+		inputMaxSize = InputBufferSize - inputSize;
 	}
 	void AddInputSize(int inputSizeAdded) {
 		inputSize += inputSizeAdded;
