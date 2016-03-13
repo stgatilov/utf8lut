@@ -83,21 +83,21 @@ FORCEINLINE bool EncodeTrivial(const char *&pSource, const char *pEnd, char *&pD
 		}
 
 		if (codepoint <= 0x7FU)
-			*pDest++ = codepoint;
+			*d++ = codepoint;
 		else if (codepoint <= 0x7FFU) {
-			*pDest++ = 0xC0U + (codepoint >> 6);
-			*pDest++ = 0x80U + (codepoint & 0x3FU);
+			*d++ = 0xC0U + (codepoint >> 6);
+			*d++ = 0x80U + (codepoint & 0x3FU);
 		}
 		else if (codepoint <= 0xFFFFU) {
-			*pDest++ = 0xE0U + (codepoint >> 12);
-			*pDest++ = 0x80U + ((codepoint >> 6) & 0x3FU);
-			*pDest++ = 0x80U + (codepoint & 0x3FU);
+			*d++ = 0xE0U + (codepoint >> 12);
+			*d++ = 0x80U + ((codepoint >> 6) & 0x3FU);
+			*d++ = 0x80U + (codepoint & 0x3FU);
 		}
 		else {
-			*pDest++ = 0xF0U + (codepoint >> 18);
-			*pDest++ = 0x80U + ((codepoint >> 12) & 0x3FU);
-			*pDest++ = 0x80U + ((codepoint >> 6) & 0x3FU);
-			*pDest++ = 0x80U + (codepoint & 0x3FU);
+			*d++ = 0xF0U + (codepoint >> 18);
+			*d++ = 0x80U + ((codepoint >> 12) & 0x3FU);
+			*d++ = 0x80U + ((codepoint >> 6) & 0x3FU);
+			*d++ = 0x80U + (codepoint & 0x3FU);
 		}
 	}
 

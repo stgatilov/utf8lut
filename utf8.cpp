@@ -11,7 +11,7 @@
 
 const uint16_t BOM_UTF16 = 0xFEFFU;
 BufferDecoder<3, 2, dmValidate, 1, 1<<16> decoder;
-BufferEncoder<2, 2, dmValidate, 1, 1<<16> encoder;
+BufferEncoder<2, 2, dmValidate, 0, 1<<16> encoder;
 
 template<class BufferProcessor> void ProcessFiles(BufferProcessor &processor, FILE *fi, FILE *fo) {
 	processor.Clear();
@@ -52,8 +52,8 @@ int main() {
 	DecoderLutTable<true>::CreateInstance();
 
 	//decode file (multiple times for profiling)
-/*	for (int run = 0; run < 100; run++)
-		ProcessFilesByName(decoder, "utf8.txt", "utfXX.txt");*/
+	for (int run = 0; run < 100; run++)
+//		ProcessFilesByName(decoder, "utf8.txt", "utfXX.txt");
 
 	//encode file (multiple times for profiling)
 //	for (int run = 0; run < 100; run++)
