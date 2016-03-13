@@ -115,7 +115,7 @@ public:
 		}
 
 		bool ok;
-		if (UnrollNum == 1)
+		if (UnrollNum >= 1)
 			ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, isLastBlock);
 		else
 			ok = EncodeTrivial<InputType>(inputPtr, inputBuffer + inputSize, outputPtr);
