@@ -18,7 +18,6 @@ struct EncoderCore {
 		char *RESTRICT pDest = ptrDest;
 		
 		__m128i reg = _mm_loadu_si128((const __m128i *)pSource);
-		ptrSource += 16;
 
 		if (MaxBytes == 2) {
 			//levels of bytes
@@ -106,7 +105,8 @@ struct EncoderCore {
 			pDest += lookup1->dstStep;
 		}
 
-		//save new destination address
+		//save new addresses
+		ptrSource += 16;
 		ptrDest = pDest;
 		return true;
 	}

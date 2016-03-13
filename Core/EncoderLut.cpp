@@ -19,9 +19,10 @@ template<> void EncoderLutTable<false>::ComputeEntry(int lensMask) {
 		if (lensMask & (1<<i)) {	//two bytes
 			shuf[pos] = 2 * i;		//take B[i]
 			header[pos] = char(0xE0);
+			pos++;
 			shuf[pos] = 2 * i + 1;	//take A[i]
 			header[pos] = char(0xC0);
-			pos += 2;
+			pos++;
 		}
 		else {	//one byte
 			shuf[pos] = 2 * i + 1;	//take A[i]
