@@ -5,7 +5,7 @@
 #include "Base/PerfDefs.h"
 #include "Core/DecoderLut.h"
 #include "Core/DecoderProcess.h"
-#include "Core/DfaProcess.h"
+#include "Core/ProcessTrivial.h"
 #include "Base/Timing.h"
 
 FORCEINLINE const char *FindUtf8Border(const char *pSource) {
