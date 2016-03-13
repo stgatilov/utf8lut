@@ -53,7 +53,7 @@ struct EncoderCore {
 			//add headers to all bytes
 			__m128i header = lookup->headerMask;
 			res = _mm_andnot_si128(header, res);
-			res = _mm_add_epi8(res, _mm_add_epi8(header, header));
+			res = _mm_xor_si128(res, _mm_add_epi8(header, header));	//add_epi8
 	
 			//write results
 			_mm_storeu_si128((__m128i *)pDest, res);
