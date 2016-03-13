@@ -101,6 +101,19 @@ public:
 
 		const char *RESTRICT inputPtr = inputBuffer;
 		char *RESTRICT outputPtr = outputBuffer;
+
+		if (UnrollNum == 4) {
+			const EncoderLutEntry *RESTRICT ptrTable = EncoderLutTable<ThreeBytes>::GetArray();
+			for (int i = 0; i < inputSize / 64; i++) {
+				bool ok = 
+					EncoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, InputType>()(inputPtr, outputPtr, ptrTable) &&
+					EncoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, InputType>()(inputPtr, outputPtr, ptrTable) &&
+					EncoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, InputType>()(inputPtr, outputPtr, ptrTable) &&
+					EncoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, InputType>()(inputPtr, outputPtr, ptrTable);
+				if (!ok) break;
+			}
+		}
+
 		bool ok;
 		if (UnrollNum == 1)
 			ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, isLastBlock);

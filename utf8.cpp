@@ -10,8 +10,8 @@
 #include "Buffer/BufferEncoder.h"
 
 const uint16_t BOM_UTF16 = 0xFEFFU;
-BufferDecoder<3, 2, dmValidate, 1, 1<<16> decoder;
-BufferEncoder<2, 2, dmValidate, 1, 1<<16> encoder;
+BufferDecoder<3, 2, dmValidate, 4, 1<<16> decoder;
+BufferEncoder<2, 2, dmValidate, 4, 1<<16> encoder;
 
 template<class BufferProcessor> void ProcessFiles(BufferProcessor &processor, FILE *fi, FILE *fo) {
 	processor.Clear();
