@@ -25,7 +25,7 @@ template<> void EncoderLutTable<false>::ComputeEntry(int lensMask) {
 		}
 		else {	//one byte
 			shuf[pos] = 2 * i + 1;	//take A[i]
-			header[pos] = char(0xC0);
+			header[pos] = char(0x80);
 			pos++;
 		}
 	}

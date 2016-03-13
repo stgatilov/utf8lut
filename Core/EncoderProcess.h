@@ -31,7 +31,7 @@ struct EncoderCore {
 			__m128i lenGe2 = _mm_cmpgt_epi16(levelB, _mm_set1_epi16(0x0001U));
 			//check if there are three+ bytes symbols
 			if (CheckExceed && !_mm_cmp_allzero(_mm_cmpgt_epi16(levelB, _mm_set1_epi16(0x001FU))))
-				return true;
+				return false;
 			//compose lens mask for lookup
 			__m128i lensAll = _mm_packs_epi16(lenGe2, _mm_setzero_si128());
 			//get index into lookup table
