@@ -13,6 +13,10 @@ BufferDecoder<3, 2, dmValidate, 1, 1<<16> decoder;
 
 int main() {
 
+	//precompute in advance
+	DecoderLutTable<false>::CreateInstance();
+	DecoderLutTable<true>::CreateInstance();
+
 for (int run = 0; run < 100; run++) {
 
 	FILE *fi = fopen("input.txt", "rb");
