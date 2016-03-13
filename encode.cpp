@@ -41,14 +41,13 @@ struct EncoderCore {
 			//check if there are three+ bytes symbols
 			if (CheckExceed && !_mm_cmp_allzero(_mm_cmpgt_epi16(levelB, _mm_set1_epi16(0x001FU))))
 				return true;
-			//compose lens masks for lookup
-			__m128i ctrlMask = _mm_setr_epi8(0, 2, 4, 6, 8, 10, 12, 14, -1, -1, -1, -1, -1, -1, -1, -1);
-			__m128i lensAll = _mm_shuffle_epi8(lenGe2, ctrlMask);
-			//get indices into lookup table
+			//compose lens mask for lookup
+			__m128i lensAll = _mm_packs_epi16(lenGe2, _mm_setzero_si128());
+			//get index into lookup table
 			uint32_t index = _mm_movemask_epi8(lensAll);
 		
 			//load info from LUT
-			const LutEntryEncode *RESTRICT lookup = LUT_ACCESS(lutTable, index * sizeof(LutEntryEncode));
+			const LutEntryEncode *RESTRICT lookup = LUT_ACCESS(lutTable, index * 64);
 			//shuffle bytes to compact layout
 			__m128i res = _mm_shuffle_epi8(levBA, lookup->shuf);
 			//add headers to all bytes
