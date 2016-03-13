@@ -8,9 +8,7 @@
 #include "Core/DfaProcess.h"
 #include "Base/Timing.h"
 
-namespace DecoderUtf8 {
-
-FORCEINLINE const char *FindBorder(const char *pSource) {
+FORCEINLINE const char *FindUtf8Border(const char *pSource) {
 	for (int i = 0; i < 4; i++) {
 		uint8_t byte = pSource[i];
 		if ((byte & 0x80U) == 0x00U)
@@ -40,6 +38,7 @@ template<int MaxBytes, int OutputType, int Mode, int StreamsNum, int BufferSize>
 class BufferDecoder {
 public:
 	static const int StreamsNumber = DMAX(StreamsNum, 1);
+	static const bool Validate = (Mode == dmValidate);
 
 private:
 	static const int InputBufferSize = BufferSize;
@@ -54,7 +53,7 @@ private:
 
 	static FORCEINLINE bool ProcessSimple(const char *&inputPtr, const char *inputEnd, char *&outputPtr, bool isLastBlock) {
 		bool ok = true;
-		const LutEntryCore *RESTRICT ptrTable = LUT_TABLE(Mode == dmValidate);
+		const DecoderLutEntry<Validate> *RESTRICT ptrTable = DecoderLutTable<Validate>::GetArray();
 		while (inputPtr <= inputEnd - 16) {
 			ok = DecoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, OutputType>()(inputPtr, outputPtr, ptrTable);
 			if (!ok) {
@@ -72,7 +71,7 @@ private:
 		splits[0] = buffer;
 		splits[StreamsNumber] = buffer + size;
 		for (int k = 1; k < StreamsNumber; k++)
-			splits[k] = FindBorder(buffer + uint32_t(k * size) / StreamsNumber);
+			splits[k] = FindUtf8Border(buffer + uint32_t(k * size) / StreamsNumber);
 	}
 public:
 
@@ -121,7 +120,7 @@ public:
 			assert(StreamsNum == 4);
 			const char *splits[StreamsNum + 1];
 			SplitRange(inputBuffer, inputSize, splits);
-			const LutEntryCore *RESTRICT ptrTable = LUT_TABLE(Mode == dmValidate);
+			const DecoderLutEntry<Validate> *RESTRICT ptrTable = DecoderLutTable<Validate>::GetArray();
 			#define STREAM_START(k) \
 				const char *inputStart##k = splits[k]; \
 				const char *inputEnd##k = splits[k+1]; \
@@ -175,5 +174,3 @@ public:
 		return true;
 	}
 };
-
-}

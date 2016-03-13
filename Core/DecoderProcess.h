@@ -5,8 +5,6 @@
 #include "Base/PerfDefs.h"
 #include "Core/DecoderLut.h"
 
-namespace DecoderUtf8 {
-
 /** template params:
  * MaxBytes = 1, 2, 3
  * CheckExceed = false, true
@@ -16,7 +14,7 @@ namespace DecoderUtf8 {
 
 template<int MaxBytes, bool CheckExceed, bool Validate, int OutputType>
 struct DecoderCore {
-	FORCEINLINE bool operator()(const char *&ptrSource, char *&ptrDest, const LutEntryCore *RESTRICT lutTable) {
+	FORCEINLINE bool operator()(const char *&ptrSource, char *&ptrDest, const DecoderLutEntry<Validate> *RESTRICT lutTable) {
 		static_assert(!Validate || CheckExceed, "Validate core mode requires CheckExceed enabled");
 		const char *RESTRICT pSource = ptrSource;
 		char *RESTRICT pDest = ptrDest;
@@ -54,8 +52,9 @@ struct DecoderCore {
 			uint32_t mask = _mm_movemask_epi8(_mm_cmplt_epi8(reg, _mm_set1_epi8(0xC0U)));
 			if (Validate && (mask & 1))
 				return false;
-			static const int stride = LUT_STRIDE(Validate);
-			const LutEntryValidate *RESTRICT lookup = LUT_ACCESS(lutTable, mask, stride);
+			//note: optimized half-index access
+			static const int stride = sizeof(lutTable[0]) / 2;
+			const DecoderLutEntry<Validate> *RESTRICT lookup = (const DecoderLutEntry<Validate> *)((const char *)lutTable + stride * mask);
 
 			__m128i Rab = _mm_shuffle_epi8(reg, lookup->shufAB);
 			Rab = _mm_and_si128(Rab, _mm_set1_epi16(0x3F7F));
@@ -97,5 +96,3 @@ struct DecoderCore {
 		}
 	}
 };
-
-}

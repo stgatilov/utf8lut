@@ -4,9 +4,7 @@
 #include <emmintrin.h>
 #include "Base/PerfDefs.h"
 
-namespace DecoderUtf8 {
-
-struct CoreInfo {
+struct DecoderCoreInfo {
 	__m128i shufAB;						//shuffling mask to get lower two bytes of symbols
 	union {
 		__m128i shufC;					//shuffling mask to get third bytes of symbols
@@ -18,27 +16,25 @@ struct CoreInfo {
 		};
 	};
 };
-struct ValidationInfo {
-    __m128i headerMask;		//mask of "111..10" bits required in each byte
-    __m128i maxValues;		//maximal allowed values of resulting symbols (signed 16-bit)
+struct DecoderValidationInfo {
+    __m128i headerMask;					//mask of "111..10" bits required in each byte
+    __m128i maxValues;					//maximal allowed values of resulting symbols (signed 16-bit)
 };
 
 //a single entry of each LUT is defined
-struct LutEntryCore : CoreInfo {};
-struct LutEntryValidate : LutEntryCore, ValidationInfo {};
+template<bool Validate> struct DecoderLutEntry {};
+template<> struct DecoderLutEntry<false> : DecoderCoreInfo {};
+template<> struct DecoderLutEntry<true> : DecoderCoreInfo, DecoderValidationInfo {};
 
-//LUT tables are stored as global arrays
-extern CACHEALIGN LutEntryCore lutTableCore[32768];
-extern CACHEALIGN LutEntryValidate lutTableValidate[32768];
+//a whole LUT table type
+template<bool Validate> struct DecoderLutTable {
+	//note: odd-indexed entries are removed (they are impossible with correct input)
+	CACHEALIGN DecoderLutEntry<Validate> data[32768];
 
-//convenient templated access to LUT tables
-#define LUT_TABLE(validate) \
-	(validate ? lutTableValidate : lutTableCore)
-#define LUT_STRIDE(validate) \
-	((validate ? sizeof(LutEntryValidate) : sizeof(LutEntryCore)) / 2)
-#define LUT_ACCESS(ptr, index, stride) \
-	(const LutEntryValidate *)( \
-		(const char *)(ptr) + (stride) * (index) \
-	)
-
-}
+	static const DecoderLutTable<Validate> *CreateInstance();
+	inline static const DecoderLutEntry<Validate> *GetArray() { return CreateInstance()->data; }
+private:
+	void ComputeAll();
+	void ComputeRec(int *sizes, int num, int total);
+	void ComputeEntry(const int *sizes, int num);
+};

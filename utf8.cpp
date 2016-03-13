@@ -7,15 +7,11 @@
 #include <intrin.h>
 #include <stdlib.h>
 #include "Buffer/BufferDecoder.h"
-#include "Core/DecoderPrecomp.h"
-
-using namespace DecoderUtf8;
 
 const uint16_t BOM_UTF16 = 0xFEFFU;
-BufferDecoder<3, 2, dmValidate, 4, 1<<16> decoder;
+BufferDecoder<3, 2, dmValidate, 1, 1<<16> decoder;
 
 int main() {
-	PrecomputeLookupTable();
 
 for (int run = 0; run < 100; run++) {
 
