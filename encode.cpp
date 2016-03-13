@@ -31,16 +31,15 @@ struct EncoderCore {
 
 		if (MaxBytes == 2) {
 			//levels of bytes
-			__m128i levelA = reg;
-			__m128i levelB = _mm_srli_epi16(reg, 6);
+			__m128i levelA = reg;													//abcdefgh|ABCDEFGH
+			__m128i levelB = _mm_srli_epi16(reg, 6);								//ghABCDEF|GH......
 			//put all bytes of each half into a register
-			__m128i levBA = _mm_xor_si128(levelB, _mm_slli_epi16(levelA, 8));
+			__m128i levBA = _mm_xor_si128(levelB, _mm_slli_epi16(levelA, 8));		//ghABC,,,|abcdefgh
 
 			//check which symbols are long
-			__m128i regS = _mm_xor_si128(reg, _mm_set1_epi16(0x8000U));	//_mm_sub_epi16
-			__m128i lenGe2 = _mm_cmpgt_epi16(regS, _mm_set1_epi16(0x807FU));
+			__m128i lenGe2 = _mm_cmpgt_epi16(levelB, _mm_set1_epi16(0x0001U));
 			//check if there are three+ bytes symbols
-			if (CheckExceed && !_mm_cmp_allzero(_mm_cmpgt_epi16(regS, _mm_set1_epi16(0x87FFU))))
+			if (CheckExceed && !_mm_cmp_allzero(_mm_cmpgt_epi16(levelB, _mm_set1_epi16(0x001FU))))
 				return true;
 			//compose lens masks for lookup
 			__m128i ctrlMask = _mm_setr_epi8(0, 2, 4, 6, 8, 10, 12, 14, -1, -1, -1, -1, -1, -1, -1, -1);
@@ -49,7 +48,7 @@ struct EncoderCore {
 			uint32_t index = _mm_movemask_epi8(lensAll);
 		
 			//load info from LUT
-			const LutEntryEncode *RESTRICT lookup = LUT_ACCESS(lutTable, index);
+			const LutEntryEncode *RESTRICT lookup = LUT_ACCESS(lutTable, index * sizeof(LutEntryEncode));
 			//shuffle bytes to compact layout
 			__m128i res = _mm_shuffle_epi8(levBA, lookup->shuf);
 			//add headers to all bytes
