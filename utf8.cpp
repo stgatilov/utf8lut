@@ -11,7 +11,7 @@
 
 const uint16_t BOM_UTF16 = 0xFEFFU;
 BufferDecoder<3, 2, dmValidate, 1, 1<<16> decoder;
-BufferEncoder<2, 2, dmValidate, 0, 1<<16> encoder;
+BufferEncoder<2, 2, dmValidate, 1, 1<<16> encoder;
 
 template<class BufferProcessor> void ProcessFiles(BufferProcessor &processor, FILE *fi, FILE *fo) {
 	processor.Clear();
@@ -50,6 +50,7 @@ int main() {
 	//precompute in advance
 	DecoderLutTable<false>::CreateInstance();
 	DecoderLutTable<true>::CreateInstance();
+try {
 
 	//decode file (multiple times for profiling)
 	for (int run = 0; run < 100; run++)
@@ -61,6 +62,9 @@ int main() {
 
 	//print profiling info
 	TIMING_PRINT();
+} catch(const char *str) {
+	fprintf(stderr, "Error: %s\n", str);
+}
 
 	return 0;
 }
