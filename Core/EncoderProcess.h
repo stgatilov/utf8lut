@@ -31,13 +31,14 @@ struct EncoderCore {
 			//check if there are three+ bytes symbols
 			if (CheckExceed && !_mm_cmp_allzero(_mm_cmpgt_epi16(levelB, _mm_set1_epi16(0x001FU))))
 				return false;
-			//compose lens mask for lookup
-			__m128i lensAll = _mm_packs_epi16(lenGe2, _mm_setzero_si128());
-			//get index into lookup table
-			uint32_t index = _mm_movemask_epi8(lensAll);
+			//compose lens mask for lookup (with a 6-byte shift)
+			__m128i lensAll = _mm_shuffle_epi8(lenGe2, _mm_setr_epi8(-1, -1, -1, -1, -1, -1, 0, 2, 4, 6, 8, 10, 12, 14, -1, -1));
+			//get byte offset into lookup table (i.e. index multiplied by 64 = entry size)
+			uint32_t offset = _mm_movemask_epi8(lensAll);
+			static_assert(sizeof(EncoderLutEntry) == 64, "Wrong size of EncoderLutEntry");
 		
-			//load info from LUT
-			const EncoderLutEntry *RESTRICT lookup = &lutTable[index];
+			//load info from LUT (using byte offset)
+			const EncoderLutEntry *RESTRICT lookup = (const EncoderLutEntry *)((const char *)lutTable + offset);
 			//shuffle bytes to compact layout
 			__m128i res = _mm_shuffle_epi8(levBA, lookup->shuf);
 			//add headers to all bytes
