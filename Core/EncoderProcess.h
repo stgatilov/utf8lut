@@ -58,6 +58,13 @@ struct EncoderCore {
 			__m128i levels0 = _mm_unpacklo_epi64(levAC, levelB);
 			__m128i levels1 = _mm_unpackhi_epi64(levAC, levelB);
 
+			if (CheckExceed) {
+				//check if there are any surrogates
+				__m128i diff = _mm_sub_epi16(reg, _mm_set1_epi16(0x5800U));
+				if (!_mm_cmp_allzero(_mm_cmplt_epi16(reg, _mm_set1_epi16(0x8800U))))
+					return false;
+			}
+
 			//check for symbols with len at least 2 and 3
 			__m128i lenGe2 = _mm_cmpgt_epi16(levelB, _mm_set1_epi16(0x0001U));
 			__m128i lenGe3 = _mm_cmpgt_epi16(levelB, _mm_set1_epi16(0x001FU));
