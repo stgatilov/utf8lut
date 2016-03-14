@@ -53,8 +53,7 @@ struct DecoderCore {
 			if (Validate && (mask & 1))
 				return false;
 			//note: optimized half-index access
-			static const int stride = sizeof(lutTable[0]) / 2;
-			const DecoderLutEntry<Validate> *RESTRICT lookup = (const DecoderLutEntry<Validate> *)((const char *)lutTable + stride * mask);
+			const DecoderLutEntry<Validate> *RESTRICT lookup = TPNT(lutTable, DecoderLutEntry<Validate>, mask * (sizeof(lutTable[0]) / 2));
 
 			__m128i Rab = _mm_shuffle_epi8(reg, lookup->shufAB);
 			Rab = _mm_and_si128(Rab, _mm_set1_epi16(0x3F7F));

@@ -38,7 +38,7 @@ struct EncoderCore {
 			static_assert(sizeof(EncoderLutEntry) == 64, "Wrong size of EncoderLutEntry");
 		
 			//load info from LUT (using byte offset)
-			const EncoderLutEntry *RESTRICT lookup = (const EncoderLutEntry *)((const char *)lutTable + offset);
+			const EncoderLutEntry *RESTRICT lookup = TPNT(lutTable, EncoderLutEntry, offset);
 			//shuffle bytes to compact layout
 			__m128i res = _mm_shuffle_epi8(levBA, lookup->shuf);
 			//add headers to all bytes

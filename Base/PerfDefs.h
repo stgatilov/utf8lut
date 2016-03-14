@@ -21,7 +21,8 @@
 //common macros
 #define ALIGNDOWN(x, b) ((x) / (b) * (b))
 #define ALIGNUP(x, b) ALIGNDOWN(((x) + (b) - 1), b)
-#define TREF(x, type, offset) ((type *)(((char *)(x)) + offset))[0]
+#define TPNT(x, type, offset) ((type *)(((char *)(x)) + offset))
+#define TREF(x, type, offset) TPNT(x, type, offset)[0]
 #define DMIN(a, b) ((a) < (b) ? (a) : (b))
 #define DMAX(a, b) ((a) > (b) ? (a) : (b))
 
