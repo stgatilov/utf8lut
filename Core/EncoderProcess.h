@@ -6,14 +6,12 @@
 /** template params:
  * MaxBytes = 1, 2, 3
  * CheckExceed = false, true
- * Validate = false, true
  * InputType = 2, 4 		//UTF16/32
  */
 
-template<int MaxBytes, bool CheckExceed, bool Validate, int InputType>
+template<int MaxBytes, bool CheckExceed, int InputType>
 struct EncoderCore {
 	FORCEINLINE bool operator()(const char *&ptrSource, char *&ptrDest, const EncoderLutEntry *RESTRICT lutTable) {
-		static_assert(!Validate || CheckExceed, "Validate core mode requires CheckExceed enabled");
 		const char *RESTRICT pSource = ptrSource;
 		char *RESTRICT pDest = ptrDest;
 		

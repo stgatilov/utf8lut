@@ -21,6 +21,7 @@ enum EncoderMode {
 	emValidate,	//encode any UTF-8 chars, validate input
 	emAllCount,	//helper
 };
+//Note: emValidate and emFull are completely equivalent
 
 template<int MaxBytes, int InputType, int Mode, int UnrollNum, int BufferSize>
 class BufferEncoder {
@@ -43,7 +44,7 @@ private:
 		bool ok = true;
 		const EncoderLutEntry *RESTRICT ptrTable = EncoderLutTable<ThreeBytes>::GetArray();
 		while (inputPtr <= inputEnd - 16) {
-			ok = EncoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, InputType>()(inputPtr, outputPtr, ptrTable);
+			ok = EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable);
 			if (!ok) {
 				if (Mode != dmFast)
 					ok = EncodeTrivial<InputType>(inputPtr, inputPtr + 16, outputPtr);
@@ -106,10 +107,10 @@ public:
 			const EncoderLutEntry *RESTRICT ptrTable = EncoderLutTable<ThreeBytes>::GetArray();
 			for (int i = 0; i < inputSize / 64; i++) {
 				bool ok = 
-					EncoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, InputType>()(inputPtr, outputPtr, ptrTable) &&
-					EncoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, InputType>()(inputPtr, outputPtr, ptrTable) &&
-					EncoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, InputType>()(inputPtr, outputPtr, ptrTable) &&
-					EncoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, InputType>()(inputPtr, outputPtr, ptrTable);
+					EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable) &&
+					EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable) &&
+					EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable) &&
+					EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable);
 				if (!ok) break;
 			}
 		}
