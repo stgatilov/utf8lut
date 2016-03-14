@@ -8,6 +8,20 @@ template<bool ThreeBytes> void EncoderLutTable<ThreeBytes>::ComputeAll() {
 		ComputeEntry(lensMask);
 }
 
+typedef int (*PartPosGetter)(int, int);
+static void HandleChar(int idx, int len, int &pos, char *shuf, char *header, PartPosGetter getPart) {
+	for (int j = 0; j < len; j++) {
+		shuf[pos + j] = getPart(idx, len-1 - j);
+		header[pos + j] = char(0xC0);
+	}
+	static const int firstByteHeader[] = {0xFF, 0x80, 0xE0, 0xF0};
+	header[pos] = char(firstByteHeader[len]);
+	pos += len;
+}
+
+int TwoBytesPartPosGetter(int idx, int part) {
+	return 2 * idx + (1 - part);
+}
 template<> void EncoderLutTable<false>::ComputeEntry(int lensMask) {
 	//init shuffle bitmask and header mask
 	char shuf[16], header[16];
@@ -16,19 +30,8 @@ template<> void EncoderLutTable<false>::ComputeEntry(int lensMask) {
 	//go over all 8 input symbols
 	int pos = 0;
 	for (int i = 0; i < 8; i++) {
-		if (lensMask & (1<<i)) {	//two bytes
-			shuf[pos] = 2 * i;		//take B[i]
-			header[pos] = char(0xE0);
-			pos++;
-			shuf[pos] = 2 * i + 1;	//take A[i]
-			header[pos] = char(0xC0);
-			pos++;
-		}
-		else {	//one byte
-			shuf[pos] = 2 * i + 1;	//take A[i]
-			header[pos] = char(0x80);
-			pos++;
-		}
+		int len = 1 + (1 & (lensMask >> i));
+		HandleChar(i, len, pos, shuf, header, TwoBytesPartPosGetter);
 	}
 	//save data into LUT entry
 	EncoderLutEntry &entry = data[lensMask];
@@ -37,81 +40,36 @@ template<> void EncoderLutTable<false>::ComputeEntry(int lensMask) {
 	entry.dstStep = pos;
 }
 
-/*
-template<bool ThreeBytes> void EncoderLutTable<ThreeBytes>::ComputeEntry(const int *sizes, int num) {
-	//find maximal number of chars to decode
-	int cnt = num - 1;
-	int preSum = 0;
-	for (int i = 0; i < cnt; i++)
-		preSum += sizes[i];
-	assert(preSum < 16);
-	//Note: generally, we can process a char only if the next byte is within XMM register
-	//However, if the last char takes 3 bytes and fits the register tightly, we can take it too
-	if (preSum == 13 && preSum + sizes[cnt] == 16)
-		preSum += sizes[cnt++];
-	//still cannot process more that 8 chars per register
-	while (cnt > 8)
-		preSum -= sizes[--cnt];
-
-	//generate bitmask
-	int mask = 0;
-	int pos = 0;
-	for (int i = 0; i < num; i++)
-		for (int j = 0; j < sizes[i]; j++)
-			mask |= (j>0) << (pos++);
-	assert(pos >= 16);
-	mask &= 0xFFFF;
-
-	//generate shuffle masks
-	char shufAB[16], shufC[16];
-	memset(shufAB, -1, sizeof(shufAB));
-	memset(shufC, -1, sizeof(shufC));
-	pos = 0;
-	for (int i = 0; i < cnt; i++) {
-		int sz = sizes[i];
-		for (int j = sz-1; j >= 0; j--) {
-			if (j < 2)
-				shufAB[2 * i + j] = pos++;
-			else
-				shufC[i] = pos++;
-		}
-	}
-	assert(pos <= 16);
-
-	//generate header masks for validation
-	char headerMask[16];
-	memset(headerMask, 0, sizeof(headerMask));
-	pos = 0;
-	for (int i = 0; i < cnt; i++) {
-		int sz = sizes[i];
-		for (int j = 0; j < sz; j++) {
-			int bits = 2;
-			if (j == 0)
-				bits = (sz == 1 ? 1 : sz == 2 ? 3 : 4);
-			headerMask[pos++] = -char(1 << (8 - bits));
-		}
-	}
-	assert(pos <= 16);
-
-	//generate max symbols values for validation 
-	int16_t maxValues[8];
-	for (int i = 0; i < 8; i++) {
-		int sz = (i < cnt ? sizes[i] : 3);
-		maxValues[i] = (sz == 1 ? (1<<7) : sz == 2 ? (1<<11) : (1<<15)) - 1;
-	}
-
-	//store info into the lookup table
-	assert(mask % 2 == 0);  mask /= 2;	//note: odd masks are removed
-	SetEntry(data[mask],
-		_mm_loadu_si128((__m128i*)shufAB),
-		_mm_loadu_si128((__m128i*)shufC),
-		preSum,
-		2 * cnt,
-		_mm_loadu_si128((__m128i*)headerMask),
-		_mm_loadu_si128((__m128i*)maxValues)
-	);
+int ThreeBytesPartPosGetter(int idx, int part) {
+	if (part < 2)
+		return 2 * idx + part;
+	else
+		return 8 + 2 * idx;
 }
-*/
+template<> void EncoderLutTable<true>::ComputeEntry(int lensMask) {
+	//init shuffle bitmask and header mask
+	char shuf[16], header[16];
+	memset(shuf, -1, sizeof(shuf));
+	memset(header, 0, sizeof(header));
+	//go over all 8 input symbols
+	int pos = 0;
+	int index = 0;
+	for (int i = 0; i < 4; i++) {
+		int len = 1 + (3 & (lensMask >> (2 * i)));
+		if (len > 3)
+			return;	//impossible entry
+		HandleChar(i, len, pos, shuf, header, ThreeBytesPartPosGetter);
+		if (len >= 2)
+			index ^= (1 << i);
+		if (len >= 3)
+			index ^= (1 << (4 + i));
+	}
+	//save data into LUT entry
+	EncoderLutEntry &entry = data[index];
+	entry.shuf = _mm_loadu_si128((__m128i*)shuf);
+	entry.headerMask = _mm_loadu_si128((__m128i*)header);
+	entry.dstStep = pos;
+}
 
 template<bool ThreeBytes> const EncoderLutTable<ThreeBytes> *EncoderLutTable<ThreeBytes>::CreateInstance() {
 	static EncoderLutTable<ThreeBytes> *singletonTable = 0;
@@ -124,4 +82,4 @@ template<bool ThreeBytes> const EncoderLutTable<ThreeBytes> *EncoderLutTable<Thr
 
 
 template struct EncoderLutTable<false>;
-//template struct EncoderLutTable<true>;
+template struct EncoderLutTable<true>;
