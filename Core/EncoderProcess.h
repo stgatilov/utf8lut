@@ -54,15 +54,17 @@ struct EncoderCore {
 			//levels of bytes
 			__m128i levAC = _mm_maddubs_epi16(_mm_and_si128(reg, _mm_set1_epi16(0xF0FFU)), _mm_set1_epi16(0x1001U));
 			__m128i levelB = _mm_srli_epi16(reg, 6);
-			//put all bytes of each half into a register
+			//put all bytes of each half into a separate register
 			__m128i levels0 = _mm_unpacklo_epi64(levAC, levelB);
 			__m128i levels1 = _mm_unpackhi_epi64(levAC, levelB);
 
-			//check which symbols are long
+			//check for symbols with len at least 2 and 3
 			__m128i lenGe2 = _mm_cmpgt_epi16(levelB, _mm_set1_epi16(0x0001U));
 			__m128i lenGe3 = _mm_cmpgt_epi16(levelB, _mm_set1_epi16(0x001FU));
+			//get a single mask from the two comparison results
 			__m128i lensMix = _mm_xor_si128(_mm_srli_epi16(lenGe3, 8), lenGe2);
 			uint32_t allMask = _mm_movemask_epi8(lensMix);
+			//each half of the mask corresponds to a LUT index
 			uint32_t offset0 = (allMask & 255U) * sizeof(EncoderLutEntry);
 			uint32_t offset1 = (allMask >> 8U) * sizeof(EncoderLutEntry);
 		
