@@ -41,10 +41,13 @@ template<> void EncoderLutTable<false>::ComputeEntry(int lensMask) {
 }
 
 int ThreeBytesPartPosGetter(int idx, int part) {
-	if (part < 2)
-		return 2 * idx + part;
-	else
+	if (part == 0)
+		return 2 * idx + 0;
+	if (part == 2)
+		return 2 * idx + 1;
+	if (part == 1)
 		return 8 + 2 * idx;
+	return -1;
 }
 template<> void EncoderLutTable<true>::ComputeEntry(int lensMask) {
 	//init shuffle bitmask and header mask
@@ -59,10 +62,7 @@ template<> void EncoderLutTable<true>::ComputeEntry(int lensMask) {
 		if (len > 3)
 			return;	//impossible entry
 		HandleChar(i, len, pos, shuf, header, ThreeBytesPartPosGetter);
-		if (len >= 2)
-			index ^= (1 << i);
-		if (len >= 3)
-			index ^= (1 << (4 + i));
+		index ^= (len ^ 1) << (2 * i);  //xor 1 just suits...
 	}
 	//save data into LUT entry
 	EncoderLutEntry &entry = data[index];
