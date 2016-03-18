@@ -1,0 +1,1 @@
+cl utf8.cpp Base/Timing.cpp Core/DecoderLut.cpp Core/EncoderLut.cpp /I. /FAs /Zi /O2 /W2 /EHsc /D _CRT_SECURE_NO_DEPRECATE /D TIMING /D NDEBUG
