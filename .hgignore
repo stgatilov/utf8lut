@@ -5,3 +5,5 @@ syntax: glob
 *.txt
 *.fb2
 u8u16/*
+*.pdb
+*.ilk
