@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Base/PerfDefs.h"
-#include <tmmintrin.h>
+#include <smmintrin.h>
 
 /** template params:
  * MaxBytes = 1, 2, 3
@@ -15,7 +15,16 @@ struct EncoderCore {
 		const char *RESTRICT pSource = ptrSource;
 		char *RESTRICT pDest = ptrDest;
 		
-		__m128i reg = _mm_loadu_si128((const __m128i *)pSource);
+		//read block of 8 symbols
+		__m128i reg;
+		if (InputType == 2)
+			reg = _mm_loadu_si128((const __m128i *)pSource);
+		else {
+			//read in two halves
+			__m128i reg0 = _mm_loadu_si128((const __m128i *)pSource + 0);
+			__m128i reg1 = _mm_loadu_si128((const __m128i *)pSource + 1);
+			reg = _mm_packus_epi32_(reg0, reg1);
+		}
 
 		if (MaxBytes == 2) {
 			//levels of bytes
@@ -95,7 +104,7 @@ struct EncoderCore {
 		}
 
 		//save new addresses
-		ptrSource += 16;
+		ptrSource += 8 * InputType;
 		ptrDest = pDest;
 		return true;
 	}

@@ -31,7 +31,8 @@ public:
 private:
 	static const int InputBufferSize = BufferSize;
 	static const int OutputBufferSize = (BufferSize / InputType) * 3 + 16;
-	static const int InputWordsQuant = 64;
+	static const int InputMinChunk = 8 * InputType;
+	static const int InputUnrollChunk = InputMinChunk * (UnrollNum > 0 ? UnrollNum : 1);
 	static const bool ThreeBytes = (MaxBytes >= 3);
 
 	char inputBuffer[InputBufferSize];
@@ -43,11 +44,11 @@ private:
 	static FORCEINLINE bool ProcessSimple(const char *&inputPtr, const char *inputEnd, char *&outputPtr, bool isLastBlock) {
 		bool ok = true;
 		const EncoderLutEntry *RESTRICT ptrTable = EncoderLutTable<ThreeBytes>::GetArray();
-		while (inputPtr <= inputEnd - 16) {
+		while (inputPtr <= inputEnd - InputMinChunk) {
 			ok = EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable);
 			if (!ok) {
 				if (Mode != dmFast)
-					ok = EncodeTrivial<InputType>(inputPtr, inputPtr + 16, outputPtr);
+					ok = EncodeTrivial<InputType>(inputPtr, inputPtr + InputMinChunk, outputPtr);
 				if (!ok) break;
 			}
 		}
@@ -63,7 +64,7 @@ public:
 		static_assert(InputType == 2 || InputType == 4, "InputType must be either 2 or 4");
 		static_assert(Mode >= 0 && Mode <= dmAllCount, "Mode must be from EncoderMode enum");
 		static_assert(UnrollNum == 0 || UnrollNum == 1 || UnrollNum == 4, "UnrollNum must be 0, 1 or 4");
-		static_assert(InputBufferSize > 0 && InputBufferSize % InputWordsQuant == 0, "BufferSize is either small or not aligned enough");
+		static_assert(InputBufferSize > InputUnrollChunk, "BufferSize is either small or not aligned enough");
 		Clear();
 	}
 
@@ -105,7 +106,7 @@ public:
 
 		if (UnrollNum == 4) {
 			const EncoderLutEntry *RESTRICT ptrTable = EncoderLutTable<ThreeBytes>::GetArray();
-			for (int i = 0; i < inputSize / 64; i++) {
+			for (int i = 0; i < inputSize / InputUnrollChunk; i++) {
 				bool ok = 
 					EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable) &&
 					EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable) &&
