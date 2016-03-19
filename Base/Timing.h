@@ -9,7 +9,8 @@
 #define TIMING_SLOTS(X) \
 	X(DECODE, 1) \
 	X(ENCODE, 2) \
-	X(MAX, 3)
+	X(TEMP, 3) \
+	X(MAX, 4)
 
 //======================================================
 
@@ -22,8 +23,7 @@ TIMING_SLOTS(TIMING_X_DEFINE);
 struct TimingData {
 	uint64_t totalTime[TIMING_MAX];
 	uint64_t totalElems[TIMING_MAX];
-	uint64_t currStartTime;
-	int currSlot;
+	uint64_t startTime[TIMING_MAX];
 };
 
 extern TimingData timingData;
@@ -31,19 +31,20 @@ extern TimingData timingData;
 //======================================================
 
 #define TIMING_START(name) { \
-	assert(timingData.currSlot == 0); \
-	timingData.currSlot = CONCAT(TIMING_, name); \
-	timingData.currStartTime = read_cycle_counter(); \
+	int slot = CONCAT(TIMING_, name); \
+	uint64_t &startTime = timingData.startTime[slot]; \
+	assert(startTime == 0); \
+	startTime = read_cycle_counter(); \
 }
 
 #define TIMING_END(name, elems) { \
-	int slot = CONCAT(TIMING_, name); \
-	assert(slot == timingData.currSlot); \
 	uint64_t endTime = read_cycle_counter(); \
-	timingData.totalTime[slot] += endTime - timingData.currStartTime; \
+	int slot = CONCAT(TIMING_, name); \
+	uint64_t &startTime = timingData.startTime[slot]; \
+	assert(startTime != 0); \
+	timingData.totalTime[slot] += endTime - startTime; \
 	timingData.totalElems[slot] += uint64_t(elems); \
-	timingData.currStartTime = 0; \
-	timingData.currSlot = 0; \
+	startTime = 0; \
 }
 
 inline void TimingPrintAll() {
