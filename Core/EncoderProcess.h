@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Base/PerfDefs.h"
-#include <smmintrin.h>
+#include <tmmintrin.h>
 
 /** template params:
  * MaxBytes = 1, 2, 3
