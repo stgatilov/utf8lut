@@ -124,8 +124,8 @@ public:
 			#define STREAM_START(k) \
 				const char *inputStart##k = splits[k]; \
 				const char *inputEnd##k = splits[k+1]; \
-				const char *RESTRICT inputPtr##k = inputStart##k; \
-				char *RESTRICT outputPtr##k = outputBuffer[k];
+				const char *inputPtr##k = inputStart##k; \
+				char *outputPtr##k = outputBuffer[k];
 			STREAM_START(0)
 			STREAM_START(1)
 			STREAM_START(2)
@@ -159,8 +159,8 @@ public:
 			STREAM_FINISH(3);
 		}
 		else {
-			const char *RESTRICT inputPtr = inputBuffer;
-			char *RESTRICT outputPtr = outputBuffer[0];
+			const char *inputPtr = inputBuffer;
+			char *outputPtr = outputBuffer[0];
 			bool ok;
 			if (StreamsNum == 1) 
 				ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, isLastBlock);
