@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include <stdio.h>
+#define __STDC_FORMAT_MACROS 1
 #include <inttypes.h>
 #include "Base/i386_timer.h"
 
