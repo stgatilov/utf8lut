@@ -101,8 +101,8 @@ public:
 	bool Process(bool isLastBlock = true) {
 		TIMING_START(ENCODE);
 
-		const char *RESTRICT inputPtr = inputBuffer;
-		char *RESTRICT outputPtr = outputBuffer;
+		const char *inputPtr = inputBuffer;
+		char *outputPtr = outputBuffer;
 
 		if (UnrollNum == 4) {
 			const EncoderLutEntry *RESTRICT ptrTable = EncoderLutTable<ThreeBytes>::GetArray();
