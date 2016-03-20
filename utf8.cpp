@@ -52,9 +52,9 @@ int main() {
 	DecoderLutTable<true>::CreateInstance();
 try {
 
-/*	//decode file (multiple times for profiling)
+	//decode file (multiple times for profiling)
 	for (int run = 0; run < 100; run++)
-		ProcessFilesByName(decoder, "utf8.txt", "utfXX.txt");*/
+		ProcessFilesByName(decoder, "utf8.txt", "utfXX.txt");
 
 	//encode file (multiple times for profiling)
 	for (int run = 0; run < 100; run++)
