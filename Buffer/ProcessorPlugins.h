@@ -80,8 +80,10 @@ public:
 	}
 	virtual void Post() {
 		int inputDone = processor->GetInputDoneSize();
-		if (inputSet - inputDone > 0)
-			memmove(inputBuffer, inputBuffer + inputDone, inputSet - inputDone);
+		int remains = inputSet - inputDone;
+		if (remains > 0)
+			memmove(inputBuffer, inputBuffer + inputDone, remains);
+		inputSet = remains;
 	}
 	int GetRemainingDataSize() const {
 		return inputSet;
