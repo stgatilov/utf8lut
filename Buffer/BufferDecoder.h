@@ -34,19 +34,13 @@ enum DecoderMode {
 	dmAllCount,	//helper
 };
 
-template<int MaxBytes, int OutputType, int Mode, int StreamsNum/*, int BufferSize*/>
+template<int MaxBytes, int OutputType, int Mode, int StreamsNum>
 class BufferDecoder : public BaseBufferProcessor {
 public:
 	static const int StreamsNumber = DMAX(StreamsNum, 1);
 
 private:
 	static const bool Validate = (Mode == dmValidate);
-
-/*	char inputBuffer[InputBufferSize];
-	char outputBuffer[StreamsNumber][OutputBufferSize];
-	int inputSize;							//total number of bytes stored in input buffer
-	int inputDone;							//number of (first) bytes processed from the input buffer
-	int outputSize[StreamsNumber];			//number of bytes stored in each output buffer*/
 
 	static FORCEINLINE bool ProcessSimple(const char *&inputPtr, const char *inputEnd, char *&outputPtr, bool isLastBlock) {
 		bool ok = true;
@@ -77,37 +71,7 @@ public:
 		static_assert(OutputType == 2 || OutputType == 4, "OutputType must be either 2 or 4");
 		static_assert(Mode >= 0 && Mode <= dmAllCount, "Mode must be from DecoderMode enum");
 		static_assert(StreamsNum == 0 || StreamsNum == 1 || StreamsNum == 4, "StreamsNum can be only 0, 1 or 4");
-//		static_assert(InputBufferSize / StreamsNumber >= MinBytesPerStream, "BufferSize is too small");
-		//Clear();
 	}
-
-/*	//start completely new compression
-	void Clear() {
-		inputSize = 0;
-		inputDone = 0;
-		for (int i = 0; i < StreamsNumber; i++) outputSize[i] = 0;
-	}*/
-
-/*	//switch from the just processed block to the next block
-	int GetUnprocessedBytesCount() const { return inputSize - inputDone; }
-	void GetOutputBuffer(const char *&outputStart, int &outputLen, int bufferIndex = 0) const {
-		outputStart = outputBuffer[bufferIndex];
-		outputLen = outputSize[bufferIndex];
-	}
-	void ToNextBlock() {
-		memmove(inputBuffer, inputBuffer + inputDone, inputSize - inputDone);
-		inputSize = inputSize - inputDone;
-		inputDone = 0;
-		for (int i = 0; i < StreamsNumber; i++) outputSize[i] = 0;
-	}
-	void GetInputBuffer(char *&inputStart, int &inputMaxSize) {
-		inputStart = inputBuffer + inputSize;
-		inputMaxSize = InputBufferSize - inputSize;
-	}
-	void AddInputSize(int inputSizeAdded) {
-		inputSize += inputSizeAdded;
-		assert(inputSize <= InputBufferSize);
-	}*/
 
 	virtual int GetStreamsCount() const {
 		return StreamsNumber;
