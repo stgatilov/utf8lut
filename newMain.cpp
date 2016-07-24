@@ -28,7 +28,7 @@ void ProcessFiles(BaseBufferProcessor &processor, FILE *fi, FILE *fo) {
 		if (!ok)
 			throw "Input data is invalid!";
 		//ask how many output buffers are there
-		int streamsCnt = processor.GetStreamsCount();
+		int streamsCnt = output.GetStreamsCount();
 		for (int k = 0; k < streamsCnt; k++) {
 			//get output bytes
 			const char *outputBuffer;
@@ -46,7 +46,7 @@ void ProcessFiles(BaseBufferProcessor &processor, FILE *fi, FILE *fo) {
 
 void ProcessInMemory(BaseBufferProcessor &processor, const char *inputBuffer, int inputSize, char *outputBuffer, int &outputSize) {
 	if (!outputBuffer) {
-		outputSize = processor.GetOutputBufferMinSize(inputSize);
+		outputSize = ContiguousOutput::GetMaxOutputSize(processor, inputSize);
 		return;
 	}
 	assert(inputBuffer);

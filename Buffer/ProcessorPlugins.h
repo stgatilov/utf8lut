@@ -100,6 +100,9 @@ class ContiguousOutput : public OutputPlugin {
 	char *multiBuffer[BaseBufferProcessor::MaxStreamsCount];
 
 public:
+	static int GetMaxOutputSize(const BaseBufferProcessor &processor, int inputSize) {
+		return processor.GetStreamsCount() * processor.GetOutputBufferMinSize(inputSize);
+	}
 	ContiguousOutput(BaseBufferProcessor &owner, char *buffer, int size) : processor(&owner) {
 		dstBuffer = buffer;
 		dstSize = size;
@@ -138,7 +141,6 @@ public:
 		else
 			dstDone += processor->GetOutputDoneSize();
 	}
-
 	int GetTotalOutputSize() const {
 		return dstDone;
 	}
@@ -164,6 +166,9 @@ public:
 	virtual void Pre() {
 		for (int i = 0; i < streamsCnt; i++)
 			processor->SetOutputBuffer(multiBuffer[i], streamOutputSize, i);
+	}
+	int GetStreamsCount() const {
+		return streamsCnt;
 	}
 	void GetBuffer(const char *&buffer, int &size, int index = 0) const {
 		buffer = multiBuffer[index];
