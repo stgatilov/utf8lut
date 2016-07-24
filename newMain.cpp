@@ -2,6 +2,7 @@
 #include "Buffer/ProcessorPlugins.h"
 #include "Base/Timing.h"
 #include "Buffer/BufferDecoder.h"
+#include "Buffer/BufferEncoder.h"
 #include <stdio.h>
 
 void ProcessFiles(BaseBufferProcessor &processor, FILE *fi, FILE *fo) {
@@ -85,10 +86,12 @@ try {
 		BufferDecoder<3, 2, dmValidate, 4> decoder;
 		ProcessFilesByName(decoder, "utf8.txt", "utfXX.txt");
 	}
-/*
+
 	//encode file (multiple times for profiling)
-	for (int run = 0; run < 100; run++)
-		ProcessFilesByName(encoder, "utfXX.txt", "utf8.txt");*/
+	for (int run = 0; run < 100; run++) {
+		BufferEncoder<3, 2, dmValidate, 4> encoder;
+		ProcessFilesByName(encoder, "utfXX.txt", "utf8.txt");
+	}
 
 	//print profiling info
 	TIMING_PRINT();

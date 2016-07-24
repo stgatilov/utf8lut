@@ -7,6 +7,7 @@
 #include "Core/DecoderProcess.h"
 #include "Core/ProcessTrivial.h"
 #include "Base/Timing.h"
+#include "Buffer/BaseBufferProcessor.h"
 
 FORCEINLINE const char *FindUtf8Border(const char *pSource) {
 	for (int i = 0; i < 4; i++) {

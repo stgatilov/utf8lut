@@ -7,6 +7,7 @@
 #include "Core/EncoderProcess.h"
 #include "Core/ProcessTrivial.h"
 #include "Base/Timing.h"
+#include "Buffer/BaseBufferProcessor.h"
 
 /**params:
  * MaxBytes = 1, 2, 3
@@ -23,23 +24,15 @@ enum EncoderMode {
 };
 //Note: emValidate and emFull are completely equivalent
 
-template<int MaxBytes, int InputType, int Mode, int UnrollNum, int BufferSize>
-class BufferEncoder {
+template<int MaxBytes, int InputType, int Mode, int UnrollNum>
+class BufferEncoder : public BaseBufferProcessor {
 public:
 	static const int StreamsNumber = 1;
 
 private:
-	static const int InputBufferSize = BufferSize;
-	static const int OutputBufferSize = (BufferSize / InputType) * 3 + 16;
 	static const int InputMinChunk = 8 * InputType;
 	static const int InputUnrollChunk = InputMinChunk * (UnrollNum > 0 ? UnrollNum : 1);
 	static const bool ThreeBytes = (MaxBytes >= 3);
-
-	char inputBuffer[InputBufferSize];
-	char outputBuffer[OutputBufferSize];
-	int inputSize;							//total number of bytes stored in input buffer
-	int inputDone;							//number of (first) bytes processed from the input buffer
-	int outputSize;							//number of bytes stored in the output buffer
 
 	static FORCEINLINE bool ProcessSimple(const char *&inputPtr, const char *inputEnd, char *&outputPtr, bool isLastBlock) {
 		bool ok = true;
@@ -64,45 +57,24 @@ public:
 		static_assert(InputType == 2 || InputType == 4, "InputType must be either 2 or 4");
 		static_assert(Mode >= 0 && Mode <= dmAllCount, "Mode must be from EncoderMode enum");
 		static_assert(UnrollNum == 0 || UnrollNum == 1 || UnrollNum == 4, "UnrollNum must be 0, 1 or 4");
-		static_assert(InputBufferSize > InputUnrollChunk, "BufferSize is either small or not aligned enough");
-		Clear();
-	}
-
-	//start completely new compression
-	void Clear() {
-		inputSize = 0;
-		inputDone = 0;
-		outputSize = 0;
-	}
-
-	//switch from the just processed block to the next block
-	int GetUnprocessedBytesCount() const { return inputSize - inputDone; }
-	void GetOutputBuffer(const char *&outputStart, int &outputLen, int) const {
-		outputStart = outputBuffer;
-		outputLen = outputSize;
-	}
-	void ToNextBlock() {
-		memmove(inputBuffer, inputBuffer + inputDone, inputSize - inputDone);
-		inputSize = inputSize - inputDone;
-		inputDone = 0;
-		outputSize = 0;
-	}
-	void GetInputBuffer(char *&inputStart, int &inputMaxSize) {
-		inputStart = inputBuffer + inputSize;
-		inputMaxSize = InputBufferSize - inputSize;
-	}
-	void AddInputSize(int inputSizeAdded) {
-		inputSize += inputSizeAdded;
-		assert(inputSize <= InputBufferSize);
 	}
 
 
-	//processing currently loaded block
-	bool Process(bool isLastBlock = true) {
+	virtual int GetStreamsCount() const {
+		return StreamsNumber;
+	}
+	virtual int GetInputBufferRecommendedSize() const {
+		return 1<<16;	//64KB
+	}
+	virtual int GetOutputBufferMinSize(int inputSize) const {
+		return (inputSize / InputType) * 3 + 16;
+	}
+
+	virtual bool _Process() {
 		TIMING_START(ENCODE);
 
 		const char *inputPtr = inputBuffer;
-		char *outputPtr = outputBuffer;
+		char *outputPtr = outputBuffer[0];
 
 		if (UnrollNum == 4) {
 			const EncoderLutEntry *RESTRICT ptrTable = EncoderLutTable<ThreeBytes>::GetArray();
@@ -118,11 +90,11 @@ public:
 
 		bool ok;
 		if (UnrollNum >= 1)
-			ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, isLastBlock);
+			ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, lastBlockMode);
 		else
 			ok = EncodeTrivial<InputType>(inputPtr, inputBuffer + inputSize, outputPtr);
        	inputDone = inputPtr - inputBuffer;
-		outputSize = outputPtr - outputBuffer;
+		outputDone[0] = outputPtr - outputBuffer[0];
 		if (!ok) return false;
 
 		TIMING_END(ENCODE, inputDone);
