@@ -26,6 +26,7 @@ public:
 		srcSize = size;
 		srcDone = 0;
 		chunkSize = processor->GetInputBufferRecommendedSize();
+		finished = false;
 		processor->AddPlugin(*this);
 	}
 	virtual void Pre() {
@@ -133,7 +134,7 @@ public:
 		if (streamsCnt > 1) {
 			for (int i = 0; i < streamsCnt; i++) {
 				int done = processor->GetOutputDoneSize(i);
-				assert(dstDone + done <= streamOutputSize);
+				assert(dstDone + done <= dstSize);
 				memcpy(dstBuffer + dstDone, multiBuffer[i], done);
 				dstDone += done;
 			}
