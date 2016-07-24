@@ -56,7 +56,10 @@ public:
 private:
 	virtual bool _Process() = 0;
 
-	
+	BasePlugin *plugins[MaxPluginsCount];
+	int pluginsCount;
+
+protected:	//accessed in implementations
 	const char *inputBuffer;
 	int inputSize;
 	char *outputBuffer[MaxStreamsCount];
@@ -64,7 +67,4 @@ private:
 	int inputDone;
 	int outputDone[MaxStreamsCount];
 	bool lastBlockMode;
-
-	BasePlugin *plugins[MaxPluginsCount];
-	int pluginsCount;
 };

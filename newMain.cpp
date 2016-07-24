@@ -1,5 +1,7 @@
 #include "Buffer/BaseBufferProcessor.h"
 #include "Buffer/ProcessorPlugins.h"
+#include "Base/Timing.h"
+#include "Buffer/BufferDecoder.h"
 #include <stdio.h>
 
 void ProcessFiles(BaseBufferProcessor &processor, FILE *fi, FILE *fo) {
@@ -65,4 +67,34 @@ void ProcessInMemory(BaseBufferProcessor &processor, const char *inputBuffer, in
 		throw "Input data is incomplete!";
 	
 	outputSize = output.GetTotalOutputSize();
+}
+
+void ProcessFilesByName(BaseBufferProcessor &processor, const char *nameI, const char *nameO) {
+	FILE *fi = fopen(nameI, "rb");
+	FILE *fo = fopen(nameO, "wb");
+	ProcessFiles(processor, fi, fo);
+	fclose(fi);
+	fclose(fo);
+}
+
+int main() {
+	
+try {
+	//decode file (multiple times for profiling)
+	for (int run = 0; run < 100; run++) {
+		BufferDecoder<3, 2, dmValidate, 4> decoder;
+		ProcessFilesByName(decoder, "utf8.txt", "utfXX.txt");
+	}
+/*
+	//encode file (multiple times for profiling)
+	for (int run = 0; run < 100; run++)
+		ProcessFilesByName(encoder, "utfXX.txt", "utf8.txt");*/
+
+	//print profiling info
+	TIMING_PRINT();
+} catch(const char *str) {
+	fprintf(stderr, "Error: %s\n", str);
+}
+
+	return 0;
 }

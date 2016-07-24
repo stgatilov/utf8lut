@@ -4,7 +4,7 @@
 
 class BasePlugin {
 public:
-	virtual ~BasePlugin();
+	virtual ~BasePlugin() {}
 	virtual void Pre() {}
 	virtual void Post() {}
 };
