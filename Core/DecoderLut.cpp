@@ -3,8 +3,8 @@
 #include <string.h>
 
 static inline void SetEntry(DecoderLutEntry<false> &entry,
-	__m128i shufAB, __m128i shufC, uint32_t srcStep, uint32_t dstStep,
-	__m128i headerMask, __m128i maxValues
+	const __m128i &shufAB, const __m128i &shufC, int srcStep, int dstStep,
+	const __m128i &headerMask, const __m128i &maxValues
 ) {
 	entry.shufAB = shufAB;
 	entry.shufC = shufC;
@@ -12,8 +12,8 @@ static inline void SetEntry(DecoderLutEntry<false> &entry,
 	entry.dstStep = dstStep;
 }
 static inline void SetEntry(DecoderLutEntry<true> &entry,
-	__m128i shufAB, __m128i shufC, uint32_t srcStep, uint32_t dstStep,
-	__m128i headerMask, __m128i maxValues
+	const __m128i &shufAB, const __m128i &shufC, int srcStep, int dstStep,
+	const __m128i &headerMask, const __m128i &maxValues
 ) {
 	entry.shufAB = shufAB;
 	entry.shufC = shufC;
