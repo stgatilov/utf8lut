@@ -35,11 +35,11 @@ void BaseBufferProcessor::SetOutputBuffer(char *ptr, int size, int index) {
 bool BaseBufferProcessor::CheckBuffers() const {
 	int streams = GetStreamsCount();
 	//check input buffer validity
-	if (!inputBuffer || inputSize < 1 || inputSize < GetBufferMaxSize())
+	if (!inputBuffer || inputSize < 1 || inputSize > GetBufferMaxSize())
 		return false;
 	//check output buffers validity
 	for (int i = 0; i < streams; i++)
-		if (!outputBuffer[i] || outputSize[i] < 1 || outputSize[i] < GetBufferMaxSize())
+		if (!outputBuffer[i] || outputSize[i] < 1 || outputSize[i] > GetBufferMaxSize())
 			return false;
 	//check for overlapping
 	for (int i = -1; i < streams; i++)
