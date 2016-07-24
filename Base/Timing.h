@@ -3,8 +3,14 @@
 #include <stdint.h>
 #include <assert.h>
 #include <stdio.h>
-#define __STDC_FORMAT_MACROS 1
-#include <inttypes.h>
+
+#ifdef _MSC_VER
+	#define PRIu64 "I64u"
+#else
+	#define __STDC_FORMAT_MACROS 1
+	#include <inttypes.h>
+#endif
+
 #include "Base/i386_timer.h"
 
 #define TIMING_SLOTS(X) \
