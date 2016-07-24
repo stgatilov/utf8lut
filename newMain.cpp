@@ -78,6 +78,28 @@ void ProcessFilesByName(BaseBufferProcessor &processor, const char *nameI, const
 	fclose(fo);
 }
 
+void ProcessFilesByName_Mem(BaseBufferProcessor &processor, const char *nameI, const char *nameO) {
+	FILE *fi = fopen(nameI, "rb");
+	fseek(fi, 0, SEEK_END);
+	int inputSize = ftell(fi);
+	fseek(fi, 0, SEEK_SET);
+	char *inputData = new char[inputSize];
+	fread(inputData, 1, inputSize, fi);
+	fclose(fi);
+
+	int outputSize = -1;
+	ProcessInMemory(processor, NULL, inputSize, NULL, outputSize);
+	char *outputData = new char[outputSize];
+	ProcessInMemory(processor, inputData, inputSize, outputData, outputSize);
+
+	FILE *fo = fopen(nameO, "wb");
+	fwrite(outputData, 1, outputSize, fo);
+	fclose(fo);
+
+	delete[] inputData;
+	delete[] outputData;
+}
+
 int main() {
 	
 try {
