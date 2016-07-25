@@ -28,7 +28,7 @@ void ProcessFiles(BaseBufferProcessor &processor, FILE *fi, FILE *fo) {
 		if (!ok)
 			throw "Input data is invalid!";
 		//ask how many output buffers are there
-		int streamsCnt = processor.GetStreamsCount();
+		int streamsCnt = output.GetStreamsCount();
 		for (int k = 0; k < streamsCnt; k++) {
 			//get output bytes
 			const char *outputBuffer;
@@ -46,7 +46,7 @@ void ProcessFiles(BaseBufferProcessor &processor, FILE *fi, FILE *fo) {
 
 void ProcessInMemory(BaseBufferProcessor &processor, const char *inputBuffer, int inputSize, char *outputBuffer, int &outputSize) {
 	if (!outputBuffer) {
-		outputSize = processor.GetOutputBufferMinSize(inputSize);
+		outputSize = ContiguousOutput::GetMaxOutputSize(processor, inputSize);
 		return;
 	}
 	assert(inputBuffer);
@@ -78,19 +78,41 @@ void ProcessFilesByName(BaseBufferProcessor &processor, const char *nameI, const
 	fclose(fo);
 }
 
+void ProcessFilesByName_Mem(BaseBufferProcessor &processor, const char *nameI, const char *nameO) {
+	FILE *fi = fopen(nameI, "rb");
+	fseek(fi, 0, SEEK_END);
+	int inputSize = ftell(fi);
+	fseek(fi, 0, SEEK_SET);
+	char *inputData = new char[inputSize];
+	fread(inputData, 1, inputSize, fi);
+	fclose(fi);
+
+	int outputSize = -1;
+	ProcessInMemory(processor, NULL, inputSize, NULL, outputSize);
+	char *outputData = new char[outputSize];
+	ProcessInMemory(processor, inputData, inputSize, outputData, outputSize);
+
+	FILE *fo = fopen(nameO, "wb");
+	fwrite(outputData, 1, outputSize, fo);
+	fclose(fo);
+
+	delete[] inputData;
+	delete[] outputData;
+}
+
 int main() {
 	
 try {
 	//decode file (multiple times for profiling)
 	for (int run = 0; run < 100; run++) {
 		BufferDecoder<3, 2, dmValidate, 4> decoder;
-		ProcessFilesByName(decoder, "utf8.txt", "utfXX.txt");
+		ProcessFilesByName_Mem(decoder, "utf8.txt", "utfXX.txt");
 	}
 
 	//encode file (multiple times for profiling)
 	for (int run = 0; run < 100; run++) {
 		BufferEncoder<3, 2, dmValidate, 4> encoder;
-		ProcessFilesByName(encoder, "utfXX.txt", "utf8.txt");
+		ProcessFilesByName_Mem(encoder, "utfXX.txt", "utf8.txt");
 	}
 
 	//print profiling info

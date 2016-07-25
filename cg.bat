@@ -1,1 +1,1 @@
-g++ utf8.cpp Base/Timing.cpp Core/DecoderLut.cpp Core/EncoderLut.cpp -I. -O2 --std=c++11 -mssse3 -D TIMING -D NDEBUG -o utf8_gcc.exe
+g++ newMain.cpp Base/Timing.cpp Core/DecoderLut.cpp Core/EncoderLut.cpp Buffer/BaseBufferProcessor.cpp -I. -O3 --std=c++11 -mssse3 -D TIMING -D NDEBUG -o utf8_gcc.exe

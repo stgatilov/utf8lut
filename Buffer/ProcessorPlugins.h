@@ -26,6 +26,7 @@ public:
 		srcSize = size;
 		srcDone = 0;
 		chunkSize = processor->GetInputBufferRecommendedSize();
+		finished = false;
 		processor->AddPlugin(*this);
 	}
 	virtual void Pre() {
@@ -100,6 +101,9 @@ class ContiguousOutput : public OutputPlugin {
 	char *multiBuffer[BaseBufferProcessor::MaxStreamsCount];
 
 public:
+	static int GetMaxOutputSize(const BaseBufferProcessor &processor, int inputSize) {
+		return processor.GetStreamsCount() * processor.GetOutputBufferMinSize(inputSize);
+	}
 	ContiguousOutput(BaseBufferProcessor &owner, char *buffer, int size) : processor(&owner) {
 		dstBuffer = buffer;
 		dstSize = size;
@@ -130,7 +134,7 @@ public:
 		if (streamsCnt > 1) {
 			for (int i = 0; i < streamsCnt; i++) {
 				int done = processor->GetOutputDoneSize(i);
-				assert(dstDone + done <= streamOutputSize);
+				assert(dstDone + done <= dstSize);
 				memcpy(dstBuffer + dstDone, multiBuffer[i], done);
 				dstDone += done;
 			}
@@ -138,7 +142,6 @@ public:
 		else
 			dstDone += processor->GetOutputDoneSize();
 	}
-
 	int GetTotalOutputSize() const {
 		return dstDone;
 	}
@@ -164,6 +167,9 @@ public:
 	virtual void Pre() {
 		for (int i = 0; i < streamsCnt; i++)
 			processor->SetOutputBuffer(multiBuffer[i], streamOutputSize, i);
+	}
+	int GetStreamsCount() const {
+		return streamsCnt;
 	}
 	void GetBuffer(const char *&buffer, int &size, int index = 0) const {
 		buffer = multiBuffer[index];
