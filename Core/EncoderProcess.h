@@ -76,6 +76,7 @@ struct EncoderCore {
 			if (CheckExceed) {
 				//check if there are any surrogates
 				__m128i diff = _mm_sub_epi16(reg, _mm_set1_epi16(0x5800U));
+				//TODO: diff is unused: most likely a bug here!!!
 				if (!_mm_cmp_allzero(_mm_cmplt_epi16(reg, _mm_set1_epi16(0x8800U))))
 					return false;
 			}
