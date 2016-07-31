@@ -106,13 +106,13 @@ try {
 	//decode file (multiple times for profiling)
 	for (int run = 0; run < 100; run++) {
 		BufferDecoder<3, 2, dmValidate, 4> decoder;
-		ProcessFilesByName_Mem(decoder, "utf8.txt", "utfXX.txt");
+		ProcessFilesByName(decoder, "utf8.txt", "utfXX.txt");
 	}
 
 	//encode file (multiple times for profiling)
 	for (int run = 0; run < 100; run++) {
 		BufferEncoder<3, 2, dmValidate, 4> encoder;
-		ProcessFilesByName_Mem(encoder, "utfXX.txt", "utf8.txt");
+		ProcessFilesByName(encoder, "utfXX.txt", "utf8.txt");
 	}
 
 	//print profiling info
