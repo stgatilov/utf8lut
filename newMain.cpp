@@ -17,7 +17,7 @@ void ProcessFiles(BaseBufferProcessor &processor, FILE *fi, FILE *fo) {
 		int maxSize;
 		input.GetBuffer(inputBuffer, maxSize);
 		//read bytes from input
-		int readSize = fread(inputBuffer, 1, maxSize, fi);
+		int readSize = (int)fread(inputBuffer, 1, maxSize, fi);
 		//tell how many bytes we really have
 		input.ConfirmInputBytes(readSize, !!feof(fi));
 

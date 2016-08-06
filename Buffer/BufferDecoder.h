@@ -119,8 +119,8 @@ public:
 			}
 			#define STREAM_FINISH(k) \
 				bool ok##k = ProcessSimple(inputPtr##k, inputEnd##k, outputPtr##k, true); \
-				inputDone = inputPtr##k - inputBuffer; \
-				outputDone[k] = outputPtr##k - outputBuffer[k]; \
+				inputDone = int(inputPtr##k - inputBuffer); \
+				outputDone[k] = int(outputPtr##k - outputBuffer[k]); \
 				if (!ok##k) \
 					return false; \
 				if (k+1 < StreamsNum) assert(inputPtr##k == inputEnd##k);
@@ -137,8 +137,8 @@ public:
 				ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, lastBlockMode);
 			else
 				ok = DecodeTrivial<OutputType>(inputPtr, inputBuffer + inputSize, outputPtr);
-        	inputDone = inputPtr - inputBuffer;
-			outputDone[0] = outputPtr - outputBuffer[0];
+        	inputDone = int(inputPtr - inputBuffer);
+			outputDone[0] = int(outputPtr - outputBuffer[0]);
 			if (!ok) return false;
 		}
 		TIMING_END(DECODE, inputDone);

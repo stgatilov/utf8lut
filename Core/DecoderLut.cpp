@@ -4,7 +4,7 @@
 
 static inline void SetEntry(DecoderLutEntry<false> &entry,
 	const __m128i &shufAB, const __m128i &shufC, int srcStep, int dstStep,
-	const __m128i &headerMask, const __m128i &maxValues
+	const __m128i &/*headerMask*/, const __m128i &/*maxValues*/
 ) {
 	entry.shufAB = shufAB;
 	entry.shufC = shufC;
@@ -84,9 +84,9 @@ template<bool Validate> void DecoderLutTable<Validate>::ComputeEntry(const int *
 		int sz = sizes[i];
 		for (int j = sz-1; j >= 0; j--) {
 			if (j < 2)
-				shufAB[2 * i + j] = pos++;
+				shufAB[2 * i + j] = char(pos++);
 			else
-				shufC[i] = pos++;
+				shufC[i] = char(pos++);
 		}
 	}
 	assert(pos <= 16);

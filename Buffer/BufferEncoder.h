@@ -94,8 +94,8 @@ public:
 			ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, lastBlockMode);
 		else
 			ok = EncodeTrivial<InputType>(inputPtr, inputBuffer + inputSize, outputPtr);
-       	inputDone = inputPtr - inputBuffer;
-		outputDone[0] = outputPtr - outputBuffer[0];
+       	inputDone = int(inputPtr - inputBuffer);
+		outputDone[0] = int(outputPtr - outputBuffer[0]);
 		if (!ok) return false;
 
 		TIMING_END(ENCODE, inputDone);

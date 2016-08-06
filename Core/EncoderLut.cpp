@@ -11,8 +11,8 @@ template<bool ThreeBytes> void EncoderLutTable<ThreeBytes>::ComputeAll() {
 typedef int (*PartPosGetter)(int, int);
 static void HandleChar(int idx, int len, int &pos, char *shuf, char *header, PartPosGetter getPart) {
 	for (int j = 0; j < len; j++) {
-		shuf[pos + j] = getPart(idx, len-1 - j);
-		header[pos + j] = char(0xC0);
+		shuf[pos + j] = (char)getPart(idx, len-1 - j);
+		header[pos + j] = (char)0xC0U;
 	}
 	static const int firstByteHeader[] = {0xFF, 0x80, 0xE0, 0xF0};
 	header[pos] = char(firstByteHeader[len]);
