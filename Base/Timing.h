@@ -1,5 +1,8 @@
 #pragma once
 
+#ifdef TIMING
+//define all this stuff only if asked for
+
 #include <stdint.h>
 #include <assert.h>
 #include <stdio.h>
@@ -11,7 +14,14 @@
 	#include <inttypes.h>
 #endif
 
-#include "Base/i386_timer.h"
+#ifdef _MSC_VER
+	#include <intrin.h>
+#else
+	#include <x86intrin.h>
+#endif
+static inline uint64_t get_ticks() {
+	return __rdtsc();
+}
 
 #define TIMING_SLOTS(X) \
 	X(DECODE, 1) \
@@ -41,11 +51,11 @@ extern TimingData timingData;
 	int slot = CONCAT(TIMING_, name); \
 	uint64_t &startTime = timingData.startTime[slot]; \
 	assert(startTime == 0); \
-	startTime = read_cycle_counter(); \
+	startTime = get_ticks(); \
 }
 
 #define TIMING_END(name, elems) { \
-	uint64_t endTime = read_cycle_counter(); \
+	uint64_t endTime = get_ticks(); \
 	int slot = CONCAT(TIMING_, name); \
 	uint64_t &startTime = timingData.startTime[slot]; \
 	assert(startTime != 0); \
@@ -56,3 +66,12 @@ extern TimingData timingData;
 
 void TimingPrintAll();
 #define TIMING_PRINT() TimingPrintAll();
+
+#else
+//if not asked (TIMING undefined), then define empty macros
+
+#define TIMING_START(name)
+#define TIMING_END(name, elems)
+#define TIMING_PRINT()
+
+#endif

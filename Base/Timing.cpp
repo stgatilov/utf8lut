@@ -1,7 +1,8 @@
 #include "Base/Timing.h"
 
-TimingData timingData = TimingData();
+#ifdef TIMING
 
+TimingData timingData = TimingData();
 void TimingPrintAll() {
 	#define TIMING_X_PRINT(name, idx) \
 		if (idx == TIMING_MAX) return; \
@@ -12,3 +13,5 @@ void TimingPrintAll() {
 		);
 	TIMING_SLOTS(TIMING_X_PRINT);
 }
+
+#endif
