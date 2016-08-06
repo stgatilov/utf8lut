@@ -1,1 +1,1 @@
-cl newMain.cpp Base/Timing.cpp Core/DecoderLut.cpp Core/EncoderLut.cpp Buffer/BaseBufferProcessor.cpp /I. /FAs /Zi /O2 /Oi /W2 /EHsc /D _CRT_SECURE_NO_DEPRECATE /D TIMING /D NDEBUG /MD /link/opt:ref
+cl newMain.cpp Base/Timing.cpp Core/DecoderLut.cpp Core/EncoderLut.cpp Buffer/BaseBufferProcessor.cpp /I. /W2 /EHsc /Fe"utf8_msvc.exe" /FAs /Zi /O2 /Oi /D _CRT_SECURE_NO_DEPRECATE /D TIMING /D NDEBUG /MD /link/opt:ref
