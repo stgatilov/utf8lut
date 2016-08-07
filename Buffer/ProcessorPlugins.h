@@ -101,7 +101,7 @@ class ContiguousOutput : public OutputPlugin {
 	char *multiBuffer[BaseBufferProcessor::MaxStreamsCount];
 
 public:
-	static int GetMaxOutputSize(const BaseBufferProcessor &processor, int inputSize) {
+	static long long GetMaxOutputSize(const BaseBufferProcessor &processor, long long inputSize) {
 		return processor.GetStreamsCount() * processor.GetOutputBufferMinSize(inputSize);
 	}
 	ContiguousOutput(BaseBufferProcessor &owner, char *buffer, int size) : processor(&owner) {

@@ -30,7 +30,8 @@ public:
 	//recommended size of input buffer (good performance-wise)
 	virtual int GetInputBufferRecommendedSize() const = 0;
 	//returns minimal possible size of each output buffer, given the input buffer size
-	virtual int GetOutputBufferMinSize(int inputSize) const = 0;
+	//note: argument may exceed maximal allowed buffer size
+	virtual long long GetOutputBufferMinSize(long long inputSize) const = 0;
 	//maximal valid size of any buffer
 	int GetBufferMaxSize() const;
 

@@ -80,7 +80,7 @@ public:
 	virtual int GetInputBufferRecommendedSize() const {
 		return 1<<16;	//64KB
 	}
-	virtual int GetOutputBufferMinSize(int inputSize) const {
+	virtual long long GetOutputBufferMinSize(long long inputSize) const {
 		return (inputSize / StreamsNumber + 4) * OutputType;
 	}
 

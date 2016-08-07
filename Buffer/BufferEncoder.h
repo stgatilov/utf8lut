@@ -66,7 +66,7 @@ public:
 	virtual int GetInputBufferRecommendedSize() const {
 		return 1<<16;	//64KB
 	}
-	virtual int GetOutputBufferMinSize(int inputSize) const {
+	virtual long long GetOutputBufferMinSize(long long inputSize) const {
 		static const int MaxBytesPerWord = (InputType == 2 ? 2 : 3);
 		return (inputSize / InputType) * MaxBytesPerWord + 16;
 	}
