@@ -15,13 +15,13 @@ class OutputPlugin : public BasePlugin {};
 class ContiguousInput : public InputPlugin {
 	BaseBufferProcessor *processor;
 	const char *srcBuffer;
-	int srcSize;
-	int srcDone;
+	long long srcSize;
+	long long srcDone;
 	int chunkSize;
 	bool finished;
 
 public:
-	ContiguousInput(BaseBufferProcessor &owner, const char *buffer, int size) : processor(&owner) {
+	ContiguousInput(BaseBufferProcessor &owner, const char *buffer, long long size) : processor(&owner) {
 		srcBuffer = buffer;
 		srcSize = size;
 		srcDone = 0;
@@ -31,17 +31,17 @@ public:
 	}
 	virtual void Pre() {
 		assert(!finished);
-		int bytes = srcSize - srcDone;
+		long long bytes = srcSize - srcDone;
 		if (bytes > chunkSize)
 			bytes = chunkSize;
-		processor->SetInputBuffer(srcBuffer + srcDone, bytes);
+		processor->SetInputBuffer(srcBuffer + srcDone, int(bytes));
 		finished = (srcDone + bytes == srcSize);
 		processor->SetMode(finished);
 	}
 	virtual void Post() {
 		srcDone += processor->GetInputDoneSize();
 	}
-	int GetRemainingDataSize() const {
+	long long GetRemainingDataSize() const {
 		return srcSize - srcDone;
 	}
 	bool Finished() const {
@@ -94,8 +94,9 @@ public:
 class ContiguousOutput : public OutputPlugin {
 	BaseBufferProcessor *processor;
 	char *dstBuffer;
-	int dstSize;
-	int dstDone;
+	long long dstSize;
+	long long dstDone;
+	int maxSize;
 
 	int streamsCnt, streamOutputSize;
 	char *multiBuffer[BaseBufferProcessor::MaxStreamsCount];
@@ -104,14 +105,15 @@ public:
 	static long long GetMaxOutputSize(const BaseBufferProcessor &processor, long long inputSize) {
 		return processor.GetStreamsCount() * processor.GetOutputBufferMinSize(inputSize);
 	}
-	ContiguousOutput(BaseBufferProcessor &owner, char *buffer, int size) : processor(&owner) {
+	ContiguousOutput(BaseBufferProcessor &owner, char *buffer, long long size) : processor(&owner) {
 		dstBuffer = buffer;
 		dstSize = size;
 		dstDone = 0;
 		streamsCnt = processor->GetStreamsCount();
 		streamOutputSize = 0;
+		maxSize = processor->GetBufferMaxSize();
 		if (streamsCnt > 1) {
-			streamOutputSize = processor->GetOutputBufferMinSize(processor->GetInputBufferRecommendedSize());
+			streamOutputSize = (int)processor->GetOutputBufferMinSize(processor->GetInputBufferRecommendedSize());
 			for (int i = 0; i < streamsCnt; i++)
 				multiBuffer[i] = new char[streamOutputSize];
 		}
@@ -127,8 +129,12 @@ public:
 			for (int i = 0; i < streamsCnt; i++)
 				processor->SetOutputBuffer(multiBuffer[i], streamOutputSize, i);
 		}
-		else
-			processor->SetOutputBuffer(dstBuffer + dstDone, dstSize - dstDone);
+		else {
+			long long remains = dstSize - dstDone;
+			if (remains > maxSize)
+				remains = maxSize;
+			processor->SetOutputBuffer(dstBuffer + dstDone, int(remains));
+		}
 	}
 	virtual void Post() {
 		if (streamsCnt > 1) {
@@ -142,7 +148,7 @@ public:
 		else
 			dstDone += processor->GetOutputDoneSize();
 	}
-	int GetTotalOutputSize() const {
+	long long GetTotalOutputSize() const {
 		return dstDone;
 	}
 };
