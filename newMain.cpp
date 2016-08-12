@@ -67,7 +67,7 @@ void ProcessInMemory(BaseBufferProcessor &processor, const char *inputBuffer, in
 	if (input.GetRemainingDataSize() != 0)
 		throw "Input data is incomplete!";
 	
-	outputSize = output.GetTotalOutputSize();
+	outputSize = output.GetFilledOutputSize();
 }
 
 void ProcessFilesByName(BaseBufferProcessor &processor, const char *nameI, const char *nameO) {

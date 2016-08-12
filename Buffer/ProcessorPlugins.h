@@ -31,10 +31,8 @@ public:
 	}
 	virtual void Pre() {
 		assert(!finished);
-		long long bytes = srcSize - srcDone;
-		if (bytes > chunkSize)
-			bytes = chunkSize;
-		processor->SetInputBuffer(srcBuffer + srcDone, int(bytes));
+		int bytes = GetNextChunkSize();
+		processor->SetInputBuffer(srcBuffer + srcDone, bytes);
 		finished = (srcDone + bytes == srcSize);
 		processor->SetMode(finished);
 	}
@@ -43,6 +41,15 @@ public:
 	}
 	long long GetRemainingDataSize() const {
 		return srcSize - srcDone;
+	}
+	long long GetBufferSize() const {
+		return srcSize;
+	}
+	int GetNextChunkSize() const {
+		long long bytes = srcSize - srcDone;
+		if (bytes > chunkSize)
+			bytes = chunkSize;
+		return int(bytes);
 	}
 	bool Finished() const {
 		return finished;
@@ -148,8 +155,11 @@ public:
 		else
 			dstDone += processor->GetOutputDoneSize();
 	}
-	long long GetTotalOutputSize() const {
+	long long GetFilledOutputSize() const {
 		return dstDone;
+	}
+	long long GetBufferSize() const {
+		return dstSize;
 	}
 };
 
