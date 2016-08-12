@@ -1,6 +1,9 @@
 syntax: glob
 *.exe
+*.dll
+*.lib
 *.obj
+*.exp
 *.asm
 *.txt
 *.fb2
