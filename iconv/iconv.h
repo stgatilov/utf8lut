@@ -33,14 +33,16 @@ extern "C" {
 	//  2. If output buffer is not big enough to hold converted data for any valid input of size *inbytesleft,
 	//     then E2BIG verdict may be returned with considerable amount of input data left unprocessed (usually up to 64KB)
 	//     (original interface guarantees that maximal possible number of input charactars is processed).
+	//  3. If input data is invalid, then conversion may stop many characters before the problematic place (usually up to 64KB).
+	//     It means that currently the library detects errors correctly, but cannot point you to exact position of the first error.
 	//
 	// Interface extension:
-	//  3. If inbuf and *inbuf are NOT null, and either outbuf or *outbuf is null, then:
+	//  4. If inbuf and *inbuf are NOT null, and either outbuf or *outbuf is null, then:
 	//     maximal possible size of converted output for input data of size *inbytesleft is stored into *outbytesleft.
 	//     Note that inbuf parameter is NOT used in this case.
 	//
 	// In order to avoid E2BIG verdict due to point 2, you should make sure that output buffer is large enough.
-	// This can be easily achieved using point 3:
+	// This can be easily achieved using point 4:
 	//     size_t inbufsize = {...}, outbufsize;
 	//     char *outbuf = (char*)0xDEADBEEF;
 	//     iconv(
