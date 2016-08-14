@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <io.h>
 #include <sys/stat.h>
-#include "iconv/iconv.h"
+#include "iconv.h"
 
 //sample taken from https://www.gnu.org/software/libc/manual/html_node/iconv-Examples.html
 //function file2wcs is slightly changed to convert UTF8 to UTF16
