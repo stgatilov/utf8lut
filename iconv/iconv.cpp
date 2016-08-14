@@ -102,9 +102,9 @@ enum Format {
 Format ParseFormat(const char *str) {
 	if (strcmp(str, "UTF-8") == 0)
 		return Utf8;
-	if (strcmp(str, "UTF-16") == 0)
+	if (strcmp(str, "UTF-16LE") == 0)
 		return Utf16;
-	if (strcmp(str, "UTF-32") == 0)
+	if (strcmp(str, "UTF-32LE") == 0)
 		return Utf32;
 	return Unsupported;
 }

@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 	// see manual at http://man7.org/linux/man-pages/man3/iconv_open.3.html
-	// Supported conversion modes are: from UTF-8 to (UTF-16 or UTF-32) and vice versa.
+	// Supported conversion modes are: from UTF-8 to (UTF-16LE or UTF-32LE) and vice versa.
 	//
 	ICONV_UTF8LUT_EXPORT iconv_t iconv_open(const char *tocode, const char *fromcode);
 
