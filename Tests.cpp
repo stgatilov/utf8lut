@@ -1,6 +1,12 @@
 #include <vector>
 #include <random>
 #include <stdint.h>
+#include <locale>
+#include <codecvt>
+
+#include "Message/MessageConverter.h"
+#include "BufferDecoder.h"
+
 
 #define RND std::mt19937
 
@@ -302,6 +308,71 @@ public:
 
 };
 
+
 void RunTest(const Data &data) {
-	
+	std::string input(data.begin(), data.end());
+	auto converter = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{};
+	bool err1 = false;
+	try {
+		std::u16string output = converter.from_bytes(input.data());
+	}
+	catch(std::exception &e) {
+		err1 = true;
+		//error
+	}
+	Data ans((char*)output.data(), (char*)(output.data() + output.size()));
+
+	BufferDecoder<3, 2, dmValidate, 1> processor;
+	long long outSize = ConvertInMemorySize(processor, data.size());
+	Data res(outSize);
+	auto r = ConvertInMemory(processor, data.data(), data.size(), res.data(), res.size());
+	bool err2 = false;
+	if (r.status)
+		err2 = true;//error
+	res.resize(r.outputSize);
+
+	if (err1 != err2 || err1 == true && res != ans) {
+		printf("Error!\n");
+		//TODO: save
+		std::terminate();
+	}
 }
+
+
+struct BaseData {
+	std::string name;
+	Data data;
+
+	BaseData(const std::string &name = "", const Data &data = Data()) : name(name), data(data) {}
+};
+
+std::vector<BaseData> testBases;
+
+void AddBase(const Data &data, const char *format, ...) {
+	va_list args;
+	va_start(args, format);
+	char name[256];
+	vsprintf(name, format, args);
+	va_end(args);
+	BaseData base;
+	base.data = data;
+	base.name = name;
+	testBases.push_back(base);
+}
+
+int main() {
+	TestsGenerator gen;
+	for (int i = 0; i <= 32; i++)
+		for (int b = 1; b <= 4; b++)
+		AddBase(gen.CodesToData(gen.RandomCodes(i, g.MaxCodeOfSize(b))), "random_codes(%d)_%d", b, i);
+	for (int i = 0; i <= 32; i++)
+		AddBase(gen.RandomBytes(i), "random_bytes_%d", i);
+
+	for (int i = 0; i < testBases.size(); i++) {
+		printf("%s\n", testBases[i].name.c_str());
+		RunTest(testBases[i].data);
+	}
+
+    return 0;
+}
+
