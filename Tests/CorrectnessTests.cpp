@@ -1,11 +1,13 @@
 #include <vector>
 #include <random>
 #include <stdint.h>
+#include <stdarg.h>
 #include <locale>
 #include <codecvt>
+#include <algorithm>
 
 #include "Message/MessageConverter.h"
-#include "BufferDecoder.h"
+#include "Buffer/BufferDecoder.h"
 
 
 #define RND std::mt19937
@@ -21,8 +23,8 @@ Data operator+ (const Data &a, const Data &b) {
 }
 Data Substr(const Data &data, int start, int end = -1) {
 	if (end < 0) end = data.size();
-	start = std::max(std::min(start, data.size()), 0);
-	end = std::max(std::min(end, data.size()), start);
+	start = std::max(std::min(start, (int)data.size()), 0);
+	end = std::max(std::min(end, (int)data.size()), start);
 	return Data(data.begin() + start, data.begin() + end);
 }
 Data Reverse(const Data &data) {
@@ -32,6 +34,7 @@ Data Reverse(const Data &data) {
 }
 
 class BaseGenerator {
+protected:
 	Format format;	
 	RND &rnd;
 
@@ -46,74 +49,74 @@ public:
 		if (bytes == 2) return 0x000007FF;
 		if (bytes == 3) return 0x0000FFFF;
 		if (bytes == 4) return MaxCode;
-		assert(0);
+		assert(0); return 0;
 	}
 
-	DataGenerator(Format format, RND &rnd) : format(format), rnd(rnd) {}
+	BaseGenerator(Format format, RND &rnd) : format(format), rnd(rnd) {}
 
 //=============== Data generation ==================
 
 	static void WriteWord(Data &data, uint8_t word) {
-		data.push_back(code & 0xFFU);
+		data.push_back(word & 0xFFU);
 	}
 	static void WriteWord(Data &data, uint16_t word) {
-		data.push_back(code & 0xFFU); word >>= 8;
-		data.push_back(code & 0xFFU);
+		data.push_back(word & 0xFFU); word >>= 8;
+		data.push_back(word & 0xFFU);
 	}
 	static void WriteWord(Data &data, uint32_t word) {
-		data.push_back(code & 0xFFU); word >>= 8;
-		data.push_back(code & 0xFFU); word >>= 8;
-		data.push_back(code & 0xFFU); word >>= 8;
-		data.push_back(code & 0xFFU);
+		data.push_back(word & 0xFFU); word >>= 8;
+		data.push_back(word & 0xFFU); word >>= 8;
+		data.push_back(word & 0xFFU); word >>= 8;
+		data.push_back(word & 0xFFU);
 	}
 
 	void AddChar(Data &data, int code) const {
 		assert(code >= 0 && code <= MaxCode);
 		if (format == Utf32) {
-			WriteWord(uint32_t(code));
+			WriteWord(data, uint32_t(code));
 		}
 		else if (format == Utf16) {
 			//from https://ru.wikipedia.org/wiki/UTF-16#.D0.9A.D0.BE.D0.B4.D0.B8.D1.80.D0.BE.D0.B2.D0.B0.D0.BD.D0.B8.D0.B5
 			if (code < 0x10000)
-				WriteWord(uint16_t(code));
+				WriteWord(data, uint16_t(code));
 			else {
 				code = code - 0x10000;
 				int lo10 = (code & 0x03FF);
 				int hi10 = (code >> 10);
-				WriteWord(uint16_t(0xD800 | hi10));
-				WriteWord(uint16_t(0xDC00 | lo10));
+				WriteWord(data, uint16_t(0xD800 | hi10));
+				WriteWord(data, uint16_t(0xDC00 | lo10));
 			}
 		}
 		else if (format == Utf8) {
 			//from http://stackoverflow.com/a/6240184/556899
 			if (code <= 0x0000007F)				//0xxxxxxx
-				WriteWord(uint8_t(0x00 | ((code >>  0) & 0x7F)));
+				WriteWord(data, uint8_t(0x00 | ((code >>  0) & 0x7F)));
 			else if (code <= 0x000007FF) {		//110xxxxx 10xxxxxx
-				WriteWord(uint8_t(0xC0 | ((code >>  6) & 0x1F)));
-				WriteWord(uint8_t(0x80 | ((code >>  0) & 0x3F)));
+				WriteWord(data, uint8_t(0xC0 | ((code >>  6) & 0x1F)));
+				WriteWord(data, uint8_t(0x80 | ((code >>  0) & 0x3F)));
 			}
 			else if (code <= 0x0000FFFF) {		//1110xxxx 10xxxxxx 10xxxxxx
-				WriteWord(uint8_t(0xE0 | ((code >> 12) & 0x0F)));
-				WriteWord(uint8_t(0x80 | ((code >>  6) & 0x3F)));
-				WriteWord(uint8_t(0x80 | ((code >>  0) & 0x3F)));
+				WriteWord(data, uint8_t(0xE0 | ((code >> 12) & 0x0F)));
+				WriteWord(data, uint8_t(0x80 | ((code >>  6) & 0x3F)));
+				WriteWord(data, uint8_t(0x80 | ((code >>  0) & 0x3F)));
 			}
 			else {								//11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-				WriteWord(uint8_t(0xF0 | ((code >> 18) & 0x07)));
-				WriteWord(uint8_t(0x80 | ((code >> 12) & 0x3F)));
-				WriteWord(uint8_t(0x80 | ((code >>  6) & 0x3F)));
-				WriteWord(uint8_t(0x80 | ((code >>  0) & 0x3F)));
+				WriteWord(data, uint8_t(0xF0 | ((code >> 18) & 0x07)));
+				WriteWord(data, uint8_t(0x80 | ((code >> 12) & 0x3F)));
+				WriteWord(data, uint8_t(0x80 | ((code >>  6) & 0x3F)));
+				WriteWord(data, uint8_t(0x80 | ((code >>  0) & 0x3F)));
 			}
 		}
 		else assert(0);
 	}
 
 	uint8_t RandomByte() {
-		uint8_t byte = Distrib(minCode, maxCode)(rnd);
+		uint8_t byte = Distrib(0, 255)(rnd);
 		return byte;
 	}
 	int RandomCode(int mask = 0) {
 		if (mask == 0) mask = (1 << MaxBytes) - 1;
-		assert(mask > 0 && mask < );
+		assert(mask > 0 && mask < (1 << MaxBytes));
 
 		int bytes;
 		do {
@@ -127,15 +130,15 @@ public:
 		return code;
 	}
 	std::vector<uint8_t> RandomBytes(int size) {
-		std:vector<uint8_t> res;
+		std::vector<uint8_t> res;
 		for (int i = 0; i < size; i++)
-			res += RandomByte();
+			res.push_back(RandomByte());
 		return res;
 	}
 	std::vector<int> RandomCodes(int size, int mask = 0) {
-		std:vector<int> res;
+		std::vector<int> res;
 		for (int i = 0; i < size; i++)
-			res += RandomCode(mask);
+			res.push_back(RandomCode(mask));
 		return res;
 	}
 
@@ -172,7 +175,7 @@ public:
 	//if input is correct, then split is surely between two chars
 	//if input is invalid, then any split can be returned
 	int FindSplit(const Data &data, int pos) const {
-		pos = std::max(std::min(pos, data.size()), 0);
+		pos = std::max(std::min(pos, (int)data.size()), 0);
 		if (format == Utf32) {
 			//align with 32-bit words
 			while (pos & 3) pos++;
@@ -198,7 +201,7 @@ public:
 	}
 
 	int RandomPos(const Data &data) {
-		int pos = Distrib(0, int(data.size()));
+		int pos = Distrib(0, int(data.size()))(rnd);
 		return pos;
 	}
 	int RandomSplit(const Data &data) {
@@ -222,7 +225,7 @@ public:
 		mutRad = rad;
 	}
 
-	int PosByHint(int hint = -1) {
+	int PosByHint(const Data &data, int hint = -1) {
 		if (hint < 0)
 			hint = RandomPos(data);
 		hint += Distrib(-mutRad, mutRad)(rnd);
@@ -232,51 +235,51 @@ public:
 //============ Mutations of single data ===============
 
 	int MutateDoubleBytes(Data &data, int hint = -1) {
-		int pos = PosByHint(hint);
+		int pos = PosByHint(data, hint);
 		int next = pos + Distrib(1, mutRad)(rnd);
 		data = Substr(data, 0, pos) + Substr(data, pos, next) + Substr(data, pos, next) + Substr(data, next);
 		return next;
 	}
 	int MutateDoubleChars(Data &data, int hint = -1) {
-		int pos = FindSplit(data, PosByHint(hint));
+		int pos = FindSplit(data, PosByHint(data, hint));
 		int next = FindSplit(data, pos + Distrib(1, mutRad)(rnd));
 		data = Substr(data, 0, pos) + Substr(data, pos, next) + Substr(data, pos, next) + Substr(data, next);
 		return next;
 	}
 
 	int MutateAddRandomBytes(Data &data, int hint = -1) {
-		int pos = PosByHint(hint);
+		int pos = PosByHint(data, hint);
 		data = Substr(data, 0, pos) + BytesToData(RandomBytes(Distrib(1, mutRad)(rnd))) + Substr(data, pos);
 		return pos;
 	}
 	int MutateAddRandomChar(Data &data, int hint = -1) {
-		int pos = FindSplit(data, PosByHint(hint));
+		int pos = FindSplit(data, PosByHint(data, hint));
 		data = Substr(data, 0, pos) + CodesToData(RandomCodes(Distrib(1, mutRad)(rnd))) + Substr(data, pos);
 		return pos;
 	}
 
 	int MutateRemoveRandomBytes(Data &data, int hint = -1) {
-		int pos = PosByHint(hint);
+		int pos = PosByHint(data, hint);
 		int next = pos + Distrib(1, mutRad)(rnd);
 		data = Substr(data, 0, pos) + Substr(data, next);
 		return pos;
 	}
 	int MutateRemoveRandomChars(Data &data, int hint = -1) {
-		int pos = FindSplit(data, PosByHint(hint));
+		int pos = FindSplit(data, PosByHint(data, hint));
 		int next = FindSplit(data, pos + Distrib(1, mutRad)(rnd));
 		data = Substr(data, 0, pos) + Substr(data, next);
 		return pos;
 	}
 
 	int MutationRevertBytes(Data &data, int hint = -1) {
-		int pos = PosByHint(hint);
+		int pos = PosByHint(data, hint);
 		int next = pos + Distrib(1, mutRad)(rnd);
 		data = Substr(data, 0, pos) + Reverse(Substr(data, pos, next)) + Substr(data, next);
 		return pos;
 	}
 
 	int MutationShortenEnd(Data &data, int hint = -1) {
-		int num = Distrib(1, mutRad)(rnd)
+		int num = Distrib(1, mutRad)(rnd);
 		if (Distrib(0, 1)(rnd))
 			data = Substr(data, 0, data.size() - num);
 		else 
@@ -313,8 +316,9 @@ void RunTest(const Data &data) {
 	std::string input(data.begin(), data.end());
 	auto converter = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{};
 	bool err1 = false;
+	std::u16string output;
 	try {
-		std::u16string output = converter.from_bytes(input.data());
+		output = converter.from_bytes(input.data());
 	}
 	catch(std::exception &e) {
 		err1 = true;
@@ -325,7 +329,7 @@ void RunTest(const Data &data) {
 	BufferDecoder<3, 2, dmValidate, 1> processor;
 	long long outSize = ConvertInMemorySize(processor, data.size());
 	Data res(outSize);
-	auto r = ConvertInMemory(processor, data.data(), data.size(), res.data(), res.size());
+	auto r = ConvertInMemory(processor, (const char*)data.data(), data.size(), (char*)res.data(), res.size());
 	bool err2 = false;
 	if (r.status)
 		err2 = true;//error
@@ -361,10 +365,12 @@ void AddBase(const Data &data, const char *format, ...) {
 }
 
 int main() {
-	TestsGenerator gen;
+	RND rnd;
+	TestsGenerator gen(Utf8, rnd);
+
 	for (int i = 0; i <= 32; i++)
-		for (int b = 1; b <= 4; b++)
-		AddBase(gen.CodesToData(gen.RandomCodes(i, g.MaxCodeOfSize(b))), "random_codes(%d)_%d", b, i);
+		for (int b = 1; b < 16; b++)
+		AddBase(gen.CodesToData(gen.RandomCodes(i, b)), "random_codes(%d)_%d", b, i);
 	for (int i = 0; i <= 32; i++)
 		AddBase(gen.RandomBytes(i), "random_bytes_%d", i);
 

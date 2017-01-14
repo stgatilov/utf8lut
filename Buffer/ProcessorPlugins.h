@@ -39,6 +39,9 @@ public:
 	virtual void Post() {
 		srcDone += processor->GetInputDoneSize();
 	}
+	long long GetProcessedInputSize() const {
+		return srcDone;
+	}
 	long long GetRemainingDataSize() const {
 		return srcSize - srcDone;
 	}

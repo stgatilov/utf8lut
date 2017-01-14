@@ -26,6 +26,8 @@ enum ConversionStatus {
 struct ConversionResult {
 	//overall result of conversion (see above)
 	ConversionStatus status;
+	//number of bytes read from input
+	long long inputSize;
 	//number of bytes written to output
 	long long outputSize;
 };
@@ -75,7 +77,7 @@ struct ConvertFilesSettings {
 	/*//hint about buffer size used for I/O requests
 	int bufferSize;*/
 
-	ConvertFilesSettings() : type(ftLibC), bufferSize(0) {}
+	ConvertFilesSettings() : type(ftLibC)/*, bufferSize(0)*/ {}
 };
 
 ConversionResult ConvertFiles(BaseBufferProcessor &processor, const char *inputFilePath, const char *outputFilePath, ConvertFilesSettings settings = ConvertFilesSettings());
