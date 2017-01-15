@@ -536,7 +536,11 @@ int main() {
         for (int i = K-1; i >= 0; i--) if (gen.IsCodeValid(i))
         	codes.push_back(i);
 		Data data = gen.CodesToData(codes);
-		RunTestF(data, "%d_sequental_codes", fmt);
+		RunTestF(data, "%d_all_sequental_codes", fmt);
+
+		std::random_shuffle(codes.begin(), codes.end());
+		Data data2 = gen.CodesToData(codes);
+		RunTestF(data2, "%d_all_random_codes", fmt);
     }
 
 /*    for (int t = 32; t <= 1<<20; t *= 2)
