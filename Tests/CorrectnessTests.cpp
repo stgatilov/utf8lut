@@ -2,8 +2,7 @@
 #include <random>
 #include <stdint.h>
 #include <stdarg.h>
-#include <locale>
-#include <codecvt>
+#include <exception>
 #include <algorithm>
 
 #include "Message/MessageConverter.h"
@@ -33,12 +32,9 @@ Data Reverse(const Data &data) {
 	return res;
 }
 
-class BaseGenerator {
+class SimpleConverter {
 protected:
 	Format format;	
-	RND &rnd;
-
-	typedef std::uniform_int_distribution<int> Distrib;
 
 public:
 	static const int MaxCode = 0x10FFFF;
@@ -52,18 +48,16 @@ public:
 		assert(0); return 0;
 	}
 
-	BaseGenerator(Format format, RND &rnd) : format(format), rnd(rnd) {}
+	SimpleConverter(Format format) : format(format) {}
 
-//=============== Data generation ==================
-
-	static void WriteWord(Data &data, uint8_t word) {
+	static void WriteWord8(Data &data, uint8_t word) {
 		data.push_back(word & 0xFFU);
 	}
-	static void WriteWord(Data &data, uint16_t word) {
+	static void WriteWord16(Data &data, uint16_t word) {
 		data.push_back(word & 0xFFU); word >>= 8;
 		data.push_back(word & 0xFFU);
 	}
-	static void WriteWord(Data &data, uint32_t word) {
+	static void WriteWord32(Data &data, uint32_t word) {
 		data.push_back(word & 0xFFU); word >>= 8;
 		data.push_back(word & 0xFFU); word >>= 8;
 		data.push_back(word & 0xFFU); word >>= 8;
@@ -72,74 +66,119 @@ public:
 
 	void AddChar(Data &data, int code) const {
 		assert(code >= 0 && code <= MaxCode);
+		assert(!(code >= 0xD800U && code < 0xE000U));
 		if (format == Utf32) {
-			WriteWord(data, uint32_t(code));
+			WriteWord32(data, uint32_t(code));
 		}
 		else if (format == Utf16) {
 			//from https://ru.wikipedia.org/wiki/UTF-16#.D0.9A.D0.BE.D0.B4.D0.B8.D1.80.D0.BE.D0.B2.D0.B0.D0.BD.D0.B8.D0.B5
 			if (code < 0x10000)
-				WriteWord(data, uint16_t(code));
+				WriteWord16(data, uint16_t(code));
 			else {
 				code = code - 0x10000;
 				int lo10 = (code & 0x03FF);
 				int hi10 = (code >> 10);
-				WriteWord(data, uint16_t(0xD800 | hi10));
-				WriteWord(data, uint16_t(0xDC00 | lo10));
+				WriteWord16(data, uint16_t(0xD800 | hi10));
+				WriteWord16(data, uint16_t(0xDC00 | lo10));
 			}
 		}
 		else if (format == Utf8) {
 			//from http://stackoverflow.com/a/6240184/556899
 			if (code <= 0x0000007F)				//0xxxxxxx
-				WriteWord(data, uint8_t(0x00 | ((code >>  0) & 0x7F)));
+				WriteWord8(data, uint8_t(0x00 | ((code >>  0) & 0x7F)));
 			else if (code <= 0x000007FF) {		//110xxxxx 10xxxxxx
-				WriteWord(data, uint8_t(0xC0 | ((code >>  6) & 0x1F)));
-				WriteWord(data, uint8_t(0x80 | ((code >>  0) & 0x3F)));
+				WriteWord8(data, uint8_t(0xC0 | ((code >>  6) & 0x1F)));
+				WriteWord8(data, uint8_t(0x80 | ((code >>  0) & 0x3F)));
 			}
 			else if (code <= 0x0000FFFF) {		//1110xxxx 10xxxxxx 10xxxxxx
-				WriteWord(data, uint8_t(0xE0 | ((code >> 12) & 0x0F)));
-				WriteWord(data, uint8_t(0x80 | ((code >>  6) & 0x3F)));
-				WriteWord(data, uint8_t(0x80 | ((code >>  0) & 0x3F)));
+				WriteWord8(data, uint8_t(0xE0 | ((code >> 12) & 0x0F)));
+				WriteWord8(data, uint8_t(0x80 | ((code >>  6) & 0x3F)));
+				WriteWord8(data, uint8_t(0x80 | ((code >>  0) & 0x3F)));
 			}
 			else {								//11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-				WriteWord(data, uint8_t(0xF0 | ((code >> 18) & 0x07)));
-				WriteWord(data, uint8_t(0x80 | ((code >> 12) & 0x3F)));
-				WriteWord(data, uint8_t(0x80 | ((code >>  6) & 0x3F)));
-				WriteWord(data, uint8_t(0x80 | ((code >>  0) & 0x3F)));
+				WriteWord8(data, uint8_t(0xF0 | ((code >> 18) & 0x07)));
+				WriteWord8(data, uint8_t(0x80 | ((code >> 12) & 0x3F)));
+				WriteWord8(data, uint8_t(0x80 | ((code >>  6) & 0x3F)));
+				WriteWord8(data, uint8_t(0x80 | ((code >>  0) & 0x3F)));
 			}
 		}
 		else assert(0);
 	}
 
-	uint8_t RandomByte() {
-		uint8_t byte = Distrib(0, 255)(rnd);
-		return byte;
+	static int ParseWord8(const Data &data, const uint8_t *&ptr) {
+		if (ptr + 1 > data.data() + data.size())
+			throw std::runtime_error("Cannot read a byte");
+		uint32_t a = (*ptr++);
+		return a;
 	}
-	int RandomCode(int mask = 0) {
-		if (mask == 0) mask = (1 << MaxBytes) - 1;
-		assert(mask > 0 && mask < (1 << MaxBytes));
+	static int ParseWord16(const Data &data, const uint8_t *&ptr) {
+		if (ptr + 2 > data.data() + data.size())
+			throw std::runtime_error("Cannot read a 16-bit word");
+		uint32_t a = (*ptr++);
+		uint32_t b = (*ptr++);
+		return a ^ (b << 8);
+	}
+	static int ParseWord32(const Data &data, const uint8_t *&ptr) {
+		if (ptr + 4 > data.data() + data.size())
+			throw std::runtime_error("Cannot read a 32-bit word");
+		uint32_t a = (*ptr++);
+		uint32_t b = (*ptr++);
+		uint32_t c = (*ptr++);
+		uint32_t d = (*ptr++);
+		return a ^ (b << 8) ^ (c << 16) ^ (c << 24);
+	}
 
-		int bytes;
-		do {
-			bytes = Distrib(1, MaxBytes)(rnd);
-		} while (!(mask & (1<<bytes)));
+	int ParseChar(const Data &data, const uint8_t *&ptr) const {
+		uint32_t code = (uint32_t)-1;
+		if (format == Utf32) {
+			code = ParseWord32(data, ptr);
+		}
+		else if (format == Utf16) {
+			code = ParseWord16(data, ptr);
+			if (code >= 0xD800U && code < 0xDC00U) {
+				uint32_t rem = ParseWord16(data, ptr);
+				if (!(rem >= 0xDC00U && rem < 0xE000U))
+					throw std::runtime_error("Second part of surrogate pair is out of range");
+				code = ((code - 0xD800U) << 10) ^ (rem - 0xDC00U);
+			}
+		}
+		else if (format == Utf8) {
+			code = ParseWord8(data, ptr);
+			int cnt;
+			if ((code & 0x80U) == 0x00U)			//0xxxxxxx
+				cnt = 0;
+			else if ((code & 0xE0U) == 0xC0U) {		//110xxxxx 10xxxxxx
+				cnt = 1;
+				code -= 0xC0U;
+			}
+			else if ((code & 0xF0U) == 0xE0U) {		//1110xxxx 10xxxxxx 10xxxxxx
+				cnt = 2;
+				code -= 0xE0U;
+			}
+			else if ((code & 0xF8U) == 0xF0U) {		//11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+				cnt = 3;
+				code -= 0xF0U;
+			}
+			else
+				throw std::runtime_error("Failed to parse leading byte");
 
-		int minCode = MaxCodeOfSize(bytes - 1) + 1;
-		int maxCode = MaxCodeOfSize(bytes);
-		int code = Distrib(minCode, maxCode)(rnd);
+			for (int t = 0; t < cnt; t++) {
+				uint32_t add = ParseWord8(data, ptr);
+				if ((add & 0xC0U) != 0x80U)
+					throw std::runtime_error("Continuation byte out of range");
+				code = (code << 6) ^ (add - 0x80U);
+			}
+			if (int(code) <= MaxCodeOfSize(cnt))
+				throw std::runtime_error("Overlong encoding");
+		}
+		else assert(0);
+
+		if (code >= 0xD800U && code < 0xE000U)
+			throw std::runtime_error("Code point in surrogate range");
+		if (code > MaxCode)
+			throw std::runtime_error("Code point too large");
 
 		return code;
-	}
-	std::vector<uint8_t> RandomBytes(int size) {
-		std::vector<uint8_t> res;
-		for (int i = 0; i < size; i++)
-			res.push_back(RandomByte());
-		return res;
-	}
-	std::vector<int> RandomCodes(int size, int mask = 0) {
-		std::vector<int> res;
-		for (int i = 0; i < size; i++)
-			res.push_back(RandomCode(mask));
-		return res;
 	}
 
 	Data ByteToData(uint8_t byte) const {
@@ -169,7 +208,15 @@ public:
 		return res;
 	}
 
-//=============== Data splits ==================
+	std::vector<int> ParseCodes(const Data &data) {
+		const uint8_t *ptr = data.data();
+		std::vector<int> res;
+		while (ptr < data.data() + data.size()) {
+			int code = ParseChar(data, ptr);
+			res.push_back(code);
+		}
+		return res;
+	}
 
 	//always finds a split at range [pos .. pos+3]
 	//if input is correct, then split is surely between two chars
@@ -198,6 +245,54 @@ public:
 		}
 		pos = std::min(pos, int(data.size()));
 		return pos;
+	}
+};
+
+
+class BaseGenerator : public SimpleConverter {
+protected:
+	RND &rnd;
+
+	typedef std::uniform_int_distribution<int> Distrib;
+
+public:
+	BaseGenerator(Format format, RND &rnd) : SimpleConverter(format), rnd(rnd) {}
+
+//=============== Data generation ==================
+
+	uint8_t RandomByte() {
+		uint8_t byte = Distrib(0, 255)(rnd);
+		return byte;
+	}
+	int RandomCode(int mask = 0) {
+		if (mask == 0) mask = (1 << MaxBytes) - 1;
+		assert(mask > 0 && mask < (1 << MaxBytes));
+
+		int bytes;
+		do {
+			bytes = Distrib(1, MaxBytes)(rnd);
+		} while (!(mask & (1 << (bytes-1))));
+
+		int minCode = MaxCodeOfSize(bytes - 1) + 1;
+		int maxCode = MaxCodeOfSize(bytes);
+        int code;
+        do {
+		    code = Distrib(minCode, maxCode)(rnd);
+        } while (code >= 0xD800U && code < 0xE000U);
+
+		return code;
+	}
+	std::vector<uint8_t> RandomBytes(int size) {
+		std::vector<uint8_t> res;
+		for (int i = 0; i < size; i++)
+			res.push_back(RandomByte());
+		return res;
+	}
+	std::vector<int> RandomCodes(int size, int mask = 0) {
+		std::vector<int> res;
+		for (int i = 0; i < size; i++)
+			res.push_back(RandomCode(mask));
+		return res;
 	}
 
 	int RandomPos(const Data &data) {
@@ -313,18 +408,16 @@ public:
 
 
 void RunTest(const Data &data) {
-	std::string input(data.begin(), data.end());
-	auto converter = std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t>{};
+	SimpleConverter u8(Utf8), u16(Utf16);
+	Data ans;
 	bool err1 = false;
-	std::u16string output;
 	try {
-		output = converter.from_bytes(input.data());
+		std::vector<int> codes = u8.ParseCodes(data);
+		ans = u16.CodesToData(codes);
 	}
-	catch(std::exception &e) {
+	catch (std::exception &e) {
 		err1 = true;
-		//error
 	}
-	Data ans((char*)output.data(), (char*)(output.data() + output.size()));
 
 	BufferDecoder<3, 2, dmValidate, 1> processor;
 	long long outSize = ConvertInMemorySize(processor, data.size());
@@ -335,7 +428,7 @@ void RunTest(const Data &data) {
 		err2 = true;//error
 	res.resize(r.outputSize);
 
-	if (err1 != err2 || err1 == true && res != ans) {
+	if (err1 != err2 || err1 == false && res != ans) {
 		printf("Error!\n");
 		//TODO: save
 		std::terminate();
@@ -368,10 +461,11 @@ int main() {
 	RND rnd;
 	TestsGenerator gen(Utf8, rnd);
 
-	for (int i = 0; i <= 32; i++)
+    AddBase(Data(), "empty");
+	for (int i = 1; i <= 32; i++)
 		for (int b = 1; b < 16; b++)
-		AddBase(gen.CodesToData(gen.RandomCodes(i, b)), "random_codes(%d)_%d", b, i);
-	for (int i = 0; i <= 32; i++)
+		    AddBase(gen.CodesToData(gen.RandomCodes(i, b)), "random_codes(%d)_%d", b, i);
+	for (int i = 1; i <= 32; i++)
 		AddBase(gen.RandomBytes(i), "random_bytes_%d", i);
 
 	for (int i = 0; i < testBases.size(); i++) {
