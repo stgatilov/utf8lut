@@ -456,6 +456,8 @@ void CheckResults(const std::unique_ptr<Data> &ans, const std::unique_ptr<Data> 
 }
 
 void RunTest(const Data &data) {
+    std::string str(data.begin(), data.end());
+    size_t hash = std::hash<std::string>()(str);
 	Format dirs[4][2] = {
 		{Utf8, Utf16},
 		{Utf8, Utf32},
