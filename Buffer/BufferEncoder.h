@@ -67,7 +67,7 @@ public:
         return 1<<16;   //64KB
     }
     virtual long long GetOutputBufferMinSize(long long inputSize) const {
-        return (inputSize / InputType) * 3 + 16;
+        return (inputSize / InputType) * (InputType == 2 ? 3 : 4) + 16;
     }
 
     virtual bool _Process() {
