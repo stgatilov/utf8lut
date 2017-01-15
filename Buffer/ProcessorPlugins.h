@@ -26,7 +26,7 @@ public:
 		srcSize = size;
 		srcDone = 0;
 		chunkSize = processor->GetInputBufferRecommendedSize();
-		finished = false;
+		finished = (srcSize == 0);
 		processor->AddPlugin(*this);
 	}
 	virtual void Pre() {

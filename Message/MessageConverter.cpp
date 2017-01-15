@@ -2,8 +2,8 @@
 #include <assert.h>
 
 ConversionResult ConvertInMemory(BaseBufferProcessor &processor, const char *inputBuffer, long long inputSize, char *outputBuffer, long long outputSize, ConvertInMemorySettings settings) {
-	assert(inputBuffer);
-	assert(outputBuffer);
+	assert(inputBuffer || inputSize == 0);
+	assert(outputBuffer || outputSize == 0);
 
 	ConversionResult result;
 	result.status = (ConversionStatus)-1;
