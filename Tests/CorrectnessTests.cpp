@@ -117,7 +117,7 @@ public:
             throw std::runtime_error("Cannot read a 16-bit word");
         uint32_t a = (*ptr++);
         uint32_t b = (*ptr++);
-        return a ^ (b << 8);
+        return a + (b << 8);
     }
     static int ParseWord32(const Data &data, const uint8_t *&ptr) {
         if (ptr + 4 > data.data() + data.size())
@@ -126,7 +126,7 @@ public:
         uint32_t b = (*ptr++);
         uint32_t c = (*ptr++);
         uint32_t d = (*ptr++);
-        return a ^ (b << 8) ^ (c << 16) ^ (c << 24);
+        return a + (b << 8) + (c << 16) + (c << 24);
     }
 
     int ParseChar(const Data &data, const uint8_t *&ptr) const {
@@ -167,7 +167,7 @@ public:
                 uint32_t add = ParseWord8(data, ptr);
                 if ((add & 0xC0U) != 0x80U)
                     throw std::runtime_error("Continuation byte out of range");
-                code = (code << 6) ^ (add - 0x80U);
+                code = (code << 6) + (add - 0x80U);
             }
             if (int(code) <= MaxCodeOfSize(cnt))
                 throw std::runtime_error("Overlong encoding");
