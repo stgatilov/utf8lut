@@ -447,12 +447,12 @@ std::unique_ptr<Data> TestedConvert(const Data &data, Format from, Format to) {
     return std::unique_ptr<Data>(new Data(std::move(answer)));
 }
 
-void CheckResults(const std::unique_ptr<Data> &ans, const std::unique_ptr<Data> &out) {
-    if (bool(ans) != bool(out) || bool(ans) && *ans != *out) {
-        printf("Error!\n");
-        //TODO: save
-        std::terminate();
-    }
+bool CheckResults(const std::unique_ptr<Data> &ans, const std::unique_ptr<Data> &out) {
+    if (bool(ans) != bool(out))
+        return false;
+    if (!bool(ans))
+        return true;
+    return *ans == *out;
 }
 
 void RunTest(const Data &data, const std::string &name) {
@@ -470,7 +470,29 @@ void RunTest(const Data &data, const std::string &name) {
         auto ans = SimpleConvert(data, from, to);
         auto res = TestedConvert(data, from, to);
         printf(" %c%c", (ans ? '.' : 'x'), (res ? '.' : 'x'));
-        CheckResults(ans, res);
+        if (!CheckResults(ans, res)) {
+            printf("Error!\n");
+            FILE *f = 0;
+            f = fopen("test_0info.txt", "wt");
+            fprintf(f, "%s (%08X): d = %d\n", name.c_str(), hash, d);
+            fprintf(f, "ans: %d\n", (ans ? (int)ans->size() : -1));
+            fprintf(f, "out: %d\n", (res ? (int)res->size() : -1));
+            fclose(f);
+            f = fopen("test_1in.bin", "wb");
+            fwrite(data.data(), data.size(), 1, f);
+            fclose(f);
+            if (ans) {
+                f = fopen("test_2ans.bin", "wb");
+                fwrite(ans->data(), ans->size(), 1, f);
+                fclose(f);
+            }
+            if (res) {
+                f = fopen("test_3out.bin", "wb");
+                fwrite(res->data(), res->size(), 1, f);
+                fclose(f);
+            }
+            std::terminate();
+        }
     }
     printf("\n");
 }
@@ -487,15 +509,32 @@ void RunTestF(const Data &data, const char *format, ...) {
 
 int main() {
     RND rnd;
+
+    RunTestF(Data(), "empty");
+
+    TestsGenerator gl(Utf32, rnd);
+    for (int i = 1; i <= 32; i++)
+        RunTestF(gl.RandomBytes(i), "random_bytes_%d", i);
+
     for (int fmt = 0; fmt < UtfCount; fmt++) {
         TestsGenerator gen(Format(fmt), rnd);
 
-        RunTestF(Data(), "empty");
         for (int i = 1; i <= 32; i++)
             for (int b = 1; b < 16; b++)
-                RunTestF(gen.CodesToData(gen.RandomCodes(i, b)), "random_codes(%d)_%d", b, i);
-        for (int i = 1; i <= 32; i++)
-            RunTestF(gen.RandomBytes(i), "random_bytes_%d", i);
+                RunTestF(gen.CodesToData(gen.RandomCodes(i, b)), "%d_random_codes(%d)_%d", fmt, b, i);
+    }
+
+    for (int t = 32; t <= 1<<20; t *= 2)
+        for (int i = t-20; i <= t+20; i++)
+            RunTestF(gl.RandomBytes(i), "random_bytes_%d", i);
+
+    for (int fmt = 0; fmt < UtfCount; fmt++) {
+        TestsGenerator gen(Format(fmt), rnd);
+
+        for (int t = 32; t <= 1<<20; t *= 2)
+            for (int i = t-20; i <= t+20; i++)
+                for (int b = 1; b < 16; b++)
+                    RunTestF(gen.CodesToData(gen.RandomCodes(i, b)), "%d_random_codes(%d)_%d", fmt, b, i);
     }
 
     return 0;
