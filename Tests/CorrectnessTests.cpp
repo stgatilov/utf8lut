@@ -7,6 +7,7 @@
 
 #include "Message/MessageConverter.h"
 #include "Buffer/BufferDecoder.h"
+#include "Buffer/BufferEncoder.h"
 
 
 #define RND std::mt19937
@@ -407,31 +408,65 @@ public:
 };
 
 
-void RunTest(const Data &data) {
-	SimpleConverter u8(Utf8), u16(Utf16);
-	Data ans;
-	bool err1 = false;
+std::unique_ptr<Data> SimpleConvert(const Data &data, Format from, Format to) {
+	SimpleConverter Usrc(from), Udst(to);
 	try {
-		std::vector<int> codes = u8.ParseCodes(data);
-		ans = u16.CodesToData(codes);
+		std::vector<int> codes = Usrc.ParseCodes(data);
+		Data answer = Udst.CodesToData(codes);
+		return std::unique_ptr<Data>(new Data(std::move(answer)));
 	}
 	catch (std::exception &e) {
-		err1 = true;
+		return nullptr;
 	}
+}
 
-	BufferDecoder<3, 2, dmValidate, 1> processor;
-	long long outSize = ConvertInMemorySize(processor, data.size());
-	Data res(outSize);
-	auto r = ConvertInMemory(processor, (const char*)data.data(), data.size(), (char*)res.data(), res.size());
-	bool err2 = false;
-	if (r.status)
-		err2 = true;//error
-	res.resize(r.outputSize);
+std::unique_ptr<BaseBufferProcessor> GenerateConverter(Format srcFormat, Format dstFormat) {
+    std::unique_ptr<BaseBufferProcessor> res;
+	if (dstFormat == Utf8 && srcFormat == Utf16)
+		res.reset(new BufferEncoder<3, 2, emValidate, 1>());
+	else if (dstFormat == Utf8 && srcFormat == Utf32)
+		res.reset(new BufferEncoder<3, 4, emValidate, 1>());
+	else if (dstFormat == Utf16 && srcFormat == Utf8)
+		res.reset(new BufferDecoder<3, 2, dmValidate, 1>());
+	else if (dstFormat == Utf32 && srcFormat == Utf8)
+		res.reset(new BufferDecoder<3, 4, dmValidate, 1>());
+    return res;
+}
 
-	if (err1 != err2 || err1 == false && res != ans) {
+//TODO: template arguments?
+std::unique_ptr<Data> TestedConvert(const Data &data, Format from, Format to) {
+    auto processor = GenerateConverter(from, to);
+		
+	long long outMaxSize = ConvertInMemorySize(*processor, data.size());
+	Data answer(outMaxSize);
+	auto res = ConvertInMemory(*processor, (const char*)data.data(), data.size(), (char*)answer.data(), answer.size());
+	if (res.status)
+		return nullptr;
+	answer.resize(res.outputSize);
+
+	return std::unique_ptr<Data>(new Data(std::move(answer)));
+}
+
+void CheckResults(const std::unique_ptr<Data> &ans, const std::unique_ptr<Data> &out) {
+	if (bool(ans) != bool(out) || bool(ans) && *ans != *out) {
 		printf("Error!\n");
 		//TODO: save
 		std::terminate();
+	}
+}
+
+void RunTest(const Data &data) {
+	Format dirs[4][2] = {
+		{Utf8, Utf16},
+		{Utf8, Utf32},
+		{Utf16, Utf8},
+		{Utf32, Utf8}
+	};
+	for (int d = 0; d < 4; d++) {
+		Format from = dirs[d][0], to = dirs[d][1];
+		auto ans = SimpleConvert(data, from, to);
+		auto res = TestedConvert(data, from, to);
+		CheckResults(ans, res);
 	}
 }
 
