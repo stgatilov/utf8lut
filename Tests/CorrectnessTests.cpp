@@ -531,8 +531,8 @@ int main() {
     for (int fmt = 0; fmt < UtfCount; fmt++) {
         TestsGenerator gen(Format(fmt), rnd);
 
-        for (int t = 32; t <= 1<<20; t *= 2)
-            for (int i = t-20; i <= t+20; i++)
+        for (int t = 32; t <= 1<<18; t *= 2)
+            for (int i = t-10; i <= t+10; i++)
                 for (int b = 1; b < 16; b++)
                     RunTestF(gen.CodesToData(gen.RandomCodes(i, b)), "%d_random_codes(%d)_%d", fmt, b, i);
     }
