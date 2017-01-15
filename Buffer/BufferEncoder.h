@@ -17,87 +17,87 @@
  */
 
 enum EncoderMode {
-	emFast,		//encode only byte lengths under limit, no checks
-	emFull,		//encode any UTF-8 chars (with fallback to slow version)
-	emValidate,	//encode any UTF-8 chars, validate input
-	emAllCount,	//helper
+    emFast,     //encode only byte lengths under limit, no checks
+    emFull,     //encode any UTF-8 chars (with fallback to slow version)
+    emValidate, //encode any UTF-8 chars, validate input
+    emAllCount, //helper
 };
 //Note: emValidate and emFull are completely equivalent
 
 template<int MaxBytes, int InputType, int Mode, int UnrollNum>
 class BufferEncoder : public BaseBufferProcessor {
 public:
-	static const int StreamsNumber = 1;
+    static const int StreamsNumber = 1;
 
 private:
-	static const int InputMinChunk = 8 * InputType;
-	static const int InputUnrollChunk = InputMinChunk * (UnrollNum > 0 ? UnrollNum : 1);
-	static const bool ThreeBytes = (MaxBytes >= 3);
+    static const int InputMinChunk = 8 * InputType;
+    static const int InputUnrollChunk = InputMinChunk * (UnrollNum > 0 ? UnrollNum : 1);
+    static const bool ThreeBytes = (MaxBytes >= 3);
 
-	static FORCEINLINE bool ProcessSimple(const char *&inputPtr, const char *inputEnd, char *&outputPtr, bool isLastBlock) {
-		bool ok = true;
-		const EncoderLutEntry *RESTRICT ptrTable = EncoderLutTable<ThreeBytes>::GetArray();
-		while (inputPtr <= inputEnd - InputMinChunk) {
-			ok = EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable);
-			if (!ok) {
-				if (Mode != dmFast)
-					ok = EncodeTrivial<InputType>(inputPtr, inputPtr + InputMinChunk, outputPtr);
-				if (!ok) break;
-			}
-		}
-		if (isLastBlock)
-			ok = EncodeTrivial<InputType>(inputPtr, inputEnd, outputPtr);
-		return ok;
-	}
+    static FORCEINLINE bool ProcessSimple(const char *&inputPtr, const char *inputEnd, char *&outputPtr, bool isLastBlock) {
+        bool ok = true;
+        const EncoderLutEntry *RESTRICT ptrTable = EncoderLutTable<ThreeBytes>::GetArray();
+        while (inputPtr <= inputEnd - InputMinChunk) {
+            ok = EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable);
+            if (!ok) {
+                if (Mode != dmFast)
+                    ok = EncodeTrivial<InputType>(inputPtr, inputPtr + InputMinChunk, outputPtr);
+                if (!ok) break;
+            }
+        }
+        if (isLastBlock)
+            ok = EncodeTrivial<InputType>(inputPtr, inputEnd, outputPtr);
+        return ok;
+    }
 
 public:
 
-	BufferEncoder() {
-		static_assert(MaxBytes >= 1 && MaxBytes <= 3, "MaxBytes must be between 1 and 3");
-		static_assert(InputType == 2 || InputType == 4, "InputType must be either 2 or 4");
-		static_assert(Mode >= 0 && Mode <= dmAllCount, "Mode must be from EncoderMode enum");
-		static_assert(UnrollNum == 0 || UnrollNum == 1 || UnrollNum == 4, "UnrollNum must be 0, 1 or 4");
-	}
+    BufferEncoder() {
+        static_assert(MaxBytes >= 1 && MaxBytes <= 3, "MaxBytes must be between 1 and 3");
+        static_assert(InputType == 2 || InputType == 4, "InputType must be either 2 or 4");
+        static_assert(Mode >= 0 && Mode <= dmAllCount, "Mode must be from EncoderMode enum");
+        static_assert(UnrollNum == 0 || UnrollNum == 1 || UnrollNum == 4, "UnrollNum must be 0, 1 or 4");
+    }
 
 
-	virtual int GetStreamsCount() const {
-		return StreamsNumber;
-	}
-	virtual int GetInputBufferRecommendedSize() const {
-		return 1<<16;	//64KB
-	}
-	virtual long long GetOutputBufferMinSize(long long inputSize) const {
-		return (inputSize / InputType) * 3 + 16;
-	}
+    virtual int GetStreamsCount() const {
+        return StreamsNumber;
+    }
+    virtual int GetInputBufferRecommendedSize() const {
+        return 1<<16;   //64KB
+    }
+    virtual long long GetOutputBufferMinSize(long long inputSize) const {
+        return (inputSize / InputType) * 3 + 16;
+    }
 
-	virtual bool _Process() {
-		TIMING_START(ENCODE);
+    virtual bool _Process() {
+        TIMING_START(ENCODE);
 
-		const char *inputPtr = inputBuffer;
-		char *outputPtr = outputBuffer[0];
+        const char *inputPtr = inputBuffer;
+        char *outputPtr = outputBuffer[0];
 
-		if (UnrollNum == 4) {
-			const EncoderLutEntry *RESTRICT ptrTable = EncoderLutTable<ThreeBytes>::GetArray();
-			for (int i = 0; i < inputSize / InputUnrollChunk; i++) {
-				bool ok = 
-					EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable) &&
-					EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable) &&
-					EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable) &&
-					EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable);
-				if (!ok) break;
-			}
-		}
+        if (UnrollNum == 4) {
+            const EncoderLutEntry *RESTRICT ptrTable = EncoderLutTable<ThreeBytes>::GetArray();
+            for (int i = 0; i < inputSize / InputUnrollChunk; i++) {
+                bool ok = 
+                    EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable) &&
+                    EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable) &&
+                    EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable) &&
+                    EncoderCore<MaxBytes, Mode != dmFast, InputType>()(inputPtr, outputPtr, ptrTable);
+                if (!ok) break;
+            }
+        }
 
-		bool ok;
-		if (UnrollNum >= 1)
-			ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, lastBlockMode);
-		else
-			ok = EncodeTrivial<InputType>(inputPtr, inputBuffer + inputSize, outputPtr);
-		inputDone = int(inputPtr - inputBuffer);
-		outputDone[0] = int(outputPtr - outputBuffer[0]);
-		if (!ok) return false;
+        bool ok;
+        if (UnrollNum >= 1)
+            ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, lastBlockMode);
+        else
+            ok = EncodeTrivial<InputType>(inputPtr, inputBuffer + inputSize, outputPtr);
+        inputDone = int(inputPtr - inputBuffer);
+        outputDone[0] = int(outputPtr - outputBuffer[0]);
+        if (!ok) return false;
 
-		TIMING_END(ENCODE, inputDone);
-		return true;
-	}
+        TIMING_END(ENCODE, inputDone);
+        return true;
+    }
 };
