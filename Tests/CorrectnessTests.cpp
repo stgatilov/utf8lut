@@ -49,6 +49,10 @@ public:
         assert(0); return 0;
     }
 
+    static bool IsCodeValid(int code) {
+		return code >= 0 && code <= MaxCode && !(code >= 0xD800U && code < 0xE000U);
+    }
+
     SimpleConverter(Format format) : format(format) {}
 
     static void WriteWord8(Data &data, uint8_t word) {
@@ -66,8 +70,7 @@ public:
     }
 
     void AddChar(Data &data, int code) const {
-        assert(code >= 0 && code <= MaxCode);
-        assert(!(code >= 0xD800U && code < 0xE000U));
+    	assert(IsCodeValid(code));
         if (format == Utf32) {
             WriteWord32(data, uint32_t(code));
         }
@@ -174,10 +177,8 @@ public:
         }
         else assert(0);
 
-        if (code >= 0xD800U && code < 0xE000U)
-            throw std::runtime_error("Code point in surrogate range");
-        if (code > MaxCode)
-            throw std::runtime_error("Code point too large");
+        if (!IsCodeValid(code))
+        	throw std::runtime_error("Parsed invalid code point");
 
         return code;
     }
@@ -458,7 +459,7 @@ bool CheckResults(const std::unique_ptr<Data> &ans, const std::unique_ptr<Data> 
 void RunTest(const Data &data, const std::string &name) {
     std::string str(data.begin(), data.end());
     uint32_t hash = std::hash<std::string>()(str);
-    printf("%s (%08X): ", name.c_str(), hash);
+    printf("%s[%u] (%08X): ", name.c_str(), unsigned(data.size()), hash);
     Format dirs[4][2] = {
         {Utf8, Utf16},
         {Utf8, Utf32},
@@ -524,7 +525,21 @@ int main() {
                 RunTestF(gen.CodesToData(gen.RandomCodes(i, b)), "%d_random_codes(%d)_%d", fmt, b, i);
     }
 
-    for (int t = 32; t <= 1<<20; t *= 2)
+    for (int fmt = 0; fmt < UtfCount; fmt++) {
+        TestsGenerator gen(Format(fmt), rnd);
+        static const int K = 0x10091;
+        std::vector<int> codes;
+        for (int i = 0; i < K; i++) if (gen.IsCodeValid(i))
+        	codes.push_back(i);
+        codes.push_back(gen.MaxCode);
+        codes.push_back(gen.MaxCode);
+        for (int i = K-1; i >= 0; i--) if (gen.IsCodeValid(i))
+        	codes.push_back(i);
+		Data data = gen.CodesToData(codes);
+		RunTestF(data, "%d_sequental_codes", fmt);
+    }
+
+/*    for (int t = 32; t <= 1<<20; t *= 2)
         for (int i = t-20; i <= t+20; i++)
             RunTestF(gl.RandomBytes(i), "random_bytes_%d", i);
 
@@ -535,7 +550,7 @@ int main() {
             for (int i = t-10; i <= t+10; i++)
                 for (int b = 1; b < 16; b++)
                     RunTestF(gen.CodesToData(gen.RandomCodes(i, b)), "%d_random_codes(%d)_%d", fmt, b, i);
-    }
+    }*/
 
     return 0;
 }
