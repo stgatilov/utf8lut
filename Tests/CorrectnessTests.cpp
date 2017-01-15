@@ -140,7 +140,7 @@ public:
                 uint32_t rem = ParseWord16(data, ptr);
                 if (!(rem >= 0xDC00U && rem < 0xE000U))
                     throw std::runtime_error("Second part of surrogate pair is out of range");
-                code = ((code - 0xD800U) << 10) ^ (rem - 0xDC00U);
+                code = ((code - 0xD800U) << 10) + (rem - 0xDC00U) + 0x010000;
             }
         }
         else if (format == Utf8) {
