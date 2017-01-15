@@ -30,7 +30,7 @@ struct EncoderCore {
 			//get all 8 lower 16-bit words
 			reg = _mm_unpacklo_epi64(reg0, reg1);
 			//if required, check that higher 16-bit words are zero
-			if (CheckExceed && !_mm_cmp_allzero(_mm_unpackhi_epi64(reg0, reg1)))
+			if (CheckExceed && !_mm_cmp_allone(_mm_cmpeq_epi16(_mm_unpackhi_epi64(reg0, reg1), _mm_setzero_si128())))
 				return false;
 		}
 
