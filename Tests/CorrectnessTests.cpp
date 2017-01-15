@@ -13,7 +13,7 @@
 #define RND std::mt19937
 
 typedef std::vector<uint8_t> Data;
-enum Format { Utf8, Utf16, Utf32 };
+enum Format { Utf8, Utf16, Utf32, UtfCount };
 
 //simple string operations
 Data operator+ (const Data &a, const Data &b) {
@@ -455,9 +455,10 @@ void CheckResults(const std::unique_ptr<Data> &ans, const std::unique_ptr<Data> 
     }
 }
 
-void RunTest(const Data &data) {
+void RunTest(const Data &data, const std::string &name) {
     std::string str(data.begin(), data.end());
-    size_t hash = std::hash<std::string>()(str);
+    uint32_t hash = std::hash<std::string>()(str);
+    printf("%s (%08X): ", name.c_str(), hash);
     Format dirs[4][2] = {
         {Utf8, Utf16},
         {Utf8, Utf32},
@@ -468,46 +469,33 @@ void RunTest(const Data &data) {
         Format from = dirs[d][0], to = dirs[d][1];
         auto ans = SimpleConvert(data, from, to);
         auto res = TestedConvert(data, from, to);
+        printf(" %c%c", (ans ? '.' : 'x'), (res ? '.' : 'x'));
         CheckResults(ans, res);
     }
+    printf("\n");
 }
 
-
-struct BaseData {
-    std::string name;
-    Data data;
-
-    BaseData(const std::string &name = "", const Data &data = Data()) : name(name), data(data) {}
-};
-
-std::vector<BaseData> testBases;
-
-void AddBase(const Data &data, const char *format, ...) {
+void RunTestF(const Data &data, const char *format, ...) {
     va_list args;
     va_start(args, format);
     char name[256];
     vsprintf(name, format, args);
     va_end(args);
-    BaseData base;
-    base.data = data;
-    base.name = name;
-    testBases.push_back(base);
+    RunTest(data, std::string(name));
 }
+
 
 int main() {
     RND rnd;
-    TestsGenerator gen(Utf8, rnd);
+    for (int fmt = 0; fmt < UtfCount; fmt++) {
+        TestsGenerator gen(Format(fmt), rnd);
 
-    AddBase(Data(), "empty");
-    for (int i = 1; i <= 32; i++)
-        for (int b = 1; b < 16; b++)
-            AddBase(gen.CodesToData(gen.RandomCodes(i, b)), "random_codes(%d)_%d", b, i);
-    for (int i = 1; i <= 32; i++)
-        AddBase(gen.RandomBytes(i), "random_bytes_%d", i);
-
-    for (int i = 0; i < testBases.size(); i++) {
-        printf("%s\n", testBases[i].name.c_str());
-        RunTest(testBases[i].data);
+        RunTestF(Data(), "empty");
+        for (int i = 1; i <= 32; i++)
+            for (int b = 1; b < 16; b++)
+                RunTestF(gen.CodesToData(gen.RandomCodes(i, b)), "random_codes(%d)_%d", b, i);
+        for (int i = 1; i <= 32; i++)
+            RunTestF(gen.RandomBytes(i), "random_bytes_%d", i);
     }
 
     return 0;
