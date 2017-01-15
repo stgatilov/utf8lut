@@ -126,7 +126,7 @@ public:
         uint32_t b = (*ptr++);
         uint32_t c = (*ptr++);
         uint32_t d = (*ptr++);
-        return a + (b << 8) + (c << 16) + (c << 24);
+        return a + (b << 8) + (c << 16) + (d << 24);
     }
 
     int ParseChar(const Data &data, const uint8_t *&ptr) const {
