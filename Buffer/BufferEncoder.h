@@ -67,8 +67,7 @@ public:
 		return 1<<16;	//64KB
 	}
 	virtual long long GetOutputBufferMinSize(long long inputSize) const {
-		static const int MaxBytesPerWord = (InputType == 2 ? 2 : 3);
-		return (inputSize / InputType) * MaxBytesPerWord + 16;
+		return (inputSize / InputType) * 3 + 16;
 	}
 
 	virtual bool _Process() {
