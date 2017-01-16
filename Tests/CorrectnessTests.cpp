@@ -368,14 +368,14 @@ public:
         return pos;
     }
 
-    int MutationRevertBytes(Data &data, int hint = -1) {
+    int MutateRevertBytes(Data &data, int hint = -1) {
         int pos = PosByHint(data, hint);
         int next = pos + Distrib(1, mutRad)(rnd);
         data = Substr(data, 0, pos) + Reverse(Substr(data, pos, next)) + Substr(data, next);
         return pos;
     }
 
-    int MutationShortenEnd(Data &data, int hint = -1) {
+    int MutateShortenEnd(Data &data, int hint = -1) {
         int num = Distrib(1, mutRad)(rnd);
         if (Distrib(0, 1)(rnd))
             data = Substr(data, 0, data.size() - num);
@@ -406,6 +406,34 @@ public:
         return res;
     }
 
+//============ apply many mutations ================
+
+    int MutateAny(Data &data, int hint = -1) {
+		int t = Distrib(0, 8)(rnd);
+		if (t == 0) return MutateDoubleBytes(data, hint);
+		if (t == 1) return MutateDoubleChars(data, hint);
+		if (t == 2) return MutateAddRandomBytes(data, hint);
+		if (t == 3) return MutateAddRandomChar(data, hint);
+		if (t == 4) return MutateRemoveRandomBytes(data, hint);
+		if (t == 5) return MutateRemoveRandomChars(data, hint);
+		if (t == 6) return MutateRevertBytes(data, hint);
+		if (t == 7) return MutateShortenEnd(data, hint);
+		return hint;
+    }
+
+	int MutateSeveral(Data &data, int hint = -1) {
+		int t = Distrib(0, 99)(rnd);
+		int k = 0;
+		if (t < 40) k = 1;
+		else if (t < 60) k = 2;
+		else if (t < 80) k = 5;
+		else k = 10;
+	
+	    for (int i = 0; i < k; i++)
+	    	hint = MutateAny(data, hint);
+
+		return hint;
+	}
 };
 
 
@@ -540,17 +568,37 @@ int main() {
 
 		std::random_shuffle(codes.begin(), codes.end());
 		Data data2 = gen.CodesToData(codes);
-		RunTestF(data2, "%d_all_random_codes", fmt);
+		RunTestF(data2, "%d_all_shuffled_codes", fmt);
 
 		data = gen.CodesToData(std::vector<int>(1000, 0));
-		RunTestF(data, "%d_samecode_%d_%d", fmt, 0, 1000);
+		RunTestF(data, "%d_samecode_%d", fmt, 0);
 		data = gen.CodesToData(std::vector<int>(1001, 255));
-		RunTestF(data, "%d_samecode_%d_%d", fmt, 255, 1001);
+		RunTestF(data, "%d_samecode_%d", fmt, 255);
 		data = gen.CodesToData(std::vector<int>(1024, 65535));
-		RunTestF(data, "%d_samecode_%d_%d", fmt, 65535, 1024);
+		RunTestF(data, "%d_samecode_%d", fmt, 65535);
 		data = gen.CodesToData(std::vector<int>(1017, 1000000));
-		RunTestF(data, "%d_samecode_%d_%d", fmt, 1000000, 1017);
+		RunTestF(data, "%d_samecode_%d", fmt, 1000000);
     }
+
+    while (1) {
+	    for (int fmt = 0; fmt < UtfCount; fmt++) {
+	        TestsGenerator gen(Format(fmt), rnd);
+
+	        std::vector<int> codes;
+	        for (int i = 0; i < 65600; i++) if (gen.IsCodeValid(i))
+	        	codes.push_back(i);
+			std::random_shuffle(codes.begin(), codes.end());
+			Data data = gen.CodesToData(codes);
+        	gen.MutateSeveral(data);
+            RunTestF(data, "%d_all_shuffled_codes_M", fmt);
+
+	        for (int b = 1; b < 16; b++) {
+	        	Data data = gen.CodesToData(gen.RandomCodes(10000, b));
+	        	gen.MutateSeveral(data);
+	            RunTestF(data, "%d_random_codes(%d)_M", fmt, b);
+	        }
+	    }
+	}
 
 /*    for (int t = 32; t <= 1<<20; t *= 2)
         for (int i = t-20; i <= t+20; i++)
@@ -567,4 +615,5 @@ int main() {
 
     return 0;
 }
+
 
