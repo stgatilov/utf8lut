@@ -541,6 +541,15 @@ int main() {
 		std::random_shuffle(codes.begin(), codes.end());
 		Data data2 = gen.CodesToData(codes);
 		RunTestF(data2, "%d_all_random_codes", fmt);
+
+		data = gen.CodesToData(std::vector<int>(1000, 0));
+		RunTestF(data, "%d_samecode_%d_%d", fmt, 0, 1000);
+		data = gen.CodesToData(std::vector<int>(1001, 255));
+		RunTestF(data, "%d_samecode_%d_%d", fmt, 255, 1001);
+		data = gen.CodesToData(std::vector<int>(1024, 65535));
+		RunTestF(data, "%d_samecode_%d_%d", fmt, 65535, 1024);
+		data = gen.CodesToData(std::vector<int>(1017, 1000000));
+		RunTestF(data, "%d_samecode_%d_%d", fmt, 1000000, 1017);
     }
 
 /*    for (int t = 32; t <= 1<<20; t *= 2)
