@@ -75,8 +75,10 @@ struct DecoderCore {
                 __m128i hdrCorrect = _mm_cmpeq_epi8(header, hdrRef);
                 __m128i overlongSymbol = _mm_cmplt_epi16(_mm_xor_si128(sum, _mm_set1_epi16(0x8000U)), lookupX->minValues);
                 __m128i surrogate = _mm_cmpgt_epi16(_mm_sub_epi16(sum, _mm_set1_epi16(0x6000)), _mm_set1_epi16(0x77FF));
-                if (MaxBytes == 2)
-                    hdrCorrect = _mm_and_si128(hdrCorrect, lookupX->shufC); //forbid 3-byte symbols
+                if (MaxBytes == 2) {
+                    __m128i shufC = _mm_unpacklo_epi8(lookupX->shufC, lookupX->shufC);
+                    hdrCorrect = _mm_and_si128(hdrCorrect, shufC); //forbid 3-byte symbols
+                }
                 __m128i allCorr = _mm_andnot_si128(_mm_or_si128(overlongSymbol, surrogate), hdrCorrect);
                 if (!_mm_cmp_allone(allCorr))
                     return false;
