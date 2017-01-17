@@ -78,7 +78,7 @@ FORCEINLINE bool EncodeTrivial(const char *&pSource, const char *pEnd, char *&pD
         else {
             codepoint = *(const uint32_t*)s;
             s += 2;
-            if (codepoint > 0x10FFFFU)
+            if (codepoint > 0x10FFFFU || codepoint - 0xD800U < 0x0800U)
                 return false;
         }
 
