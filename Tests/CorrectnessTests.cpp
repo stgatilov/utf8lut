@@ -484,7 +484,7 @@ bool CheckResults(const std::unique_ptr<Data> &ans, const std::unique_ptr<Data> 
     return *ans == *out;
 }
 
-void RunTest(const Data &data, const std::string &name) {
+void RunTest(const Data &data, const std::string &name, int d = -1) {
     std::string str(data.begin(), data.end());
     uint32_t hash = std::hash<std::string>()(str);
     printf("%s[%u] (%08X): ", name.c_str(), unsigned(data.size()), hash);
@@ -494,7 +494,9 @@ void RunTest(const Data &data, const std::string &name) {
         {Utf16, Utf8},
         {Utf32, Utf8}
     };
-    for (int d = 0; d < 4; d++) {
+    int minD = d < 0 ? 0 : d;
+    int maxD = d < 0 ? 3 : d;
+    for (int d = minD; d <= maxD; d++) {
         Format from = dirs[d][0], to = dirs[d][1];
         auto ans = SimpleConvert(data, from, to);
         auto res = TestedConvert(data, from, to);
@@ -539,6 +541,11 @@ void RunTestF(const Data &data, const char *format, ...) {
 int main(int argc, char **argv) {
 	if (argc >= 2 && strcmp(argv[1], "-r") == 0) {
 		//replay old test, for debugging
+        FILE *ft = fopen("test_0info.txt", "rt");
+        char buff[256];
+        int Xd = -1;
+        fscanf(ft, "replay %s d = %d", buff, &Xd);
+        fclose(ft);
 	    FILE *fi = fopen("test_1in.bin", "rb");
 	    fseek(fi, 0, SEEK_END);
 	    int inputSize = ftell(fi);
@@ -547,7 +554,7 @@ int main(int argc, char **argv) {
 	    fread(data.data(), 1, inputSize, fi);
 	    fclose(fi);
 
-	    RunTest(data, "replay");
+	    RunTest(data, "replay", Xd);
 		return 0;
 	}
 
