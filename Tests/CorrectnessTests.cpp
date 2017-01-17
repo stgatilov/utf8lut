@@ -536,7 +536,22 @@ void RunTestF(const Data &data, const char *format, ...) {
 }
 
 
-int main() {
+int main(int argc, char **argv) {
+	if (argc >= 2 && strcmp(argv[1], "-r") == 0) {
+		//replay old test, for debugging
+	    FILE *fi = fopen("test_1in.bin", "rb");
+	    fseek(fi, 0, SEEK_END);
+	    int inputSize = ftell(fi);
+	    fseek(fi, 0, SEEK_SET);
+	 	Data data(inputSize);
+	    fread(data.data(), 1, inputSize, fi);
+	    fclose(fi);
+
+	    RunTest(data, "replay");
+		return 0;
+	}
+
+
     RND rnd;
 
     RunTestF(Data(), "empty");
