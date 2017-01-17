@@ -4,7 +4,7 @@
 
 static inline void SetEntry(DecoderLutEntry<false> &entry,
     const __m128i &shufAB, const __m128i &shufC, int srcStep, int dstStep,
-    const __m128i &/*headerMask*/, const __m128i &/*maxValues*/
+    const __m128i &/*headerMask*/, const __m128i &/*minValues*/
 ) {
     entry.shufAB = shufAB;
     entry.shufC = shufC;
@@ -13,14 +13,14 @@ static inline void SetEntry(DecoderLutEntry<false> &entry,
 }
 static inline void SetEntry(DecoderLutEntry<true> &entry,
     const __m128i &shufAB, const __m128i &shufC, int srcStep, int dstStep,
-    const __m128i &headerMask, const __m128i &maxValues
+    const __m128i &headerMask, const __m128i &minValues
 ) {
     entry.shufAB = shufAB;
     entry.shufC = shufC;
     entry.srcStep = srcStep;
     entry.dstStep = dstStep;
     entry.headerMask = headerMask;
-    entry.maxValues = maxValues;
+    entry.minValues = minValues;
 }
 
 
@@ -33,7 +33,7 @@ template<bool Validate> void DecoderLutTable<Validate>::ComputeAll() {
         16,                     //skip the whole 16-byte block on error
         0,                      //do not move output pointer
         _mm_set1_epi8(-1),      //forbid any bytes except 11111110
-        _mm_set1_epi16(-1)      //forbid non-negative symbols values (zeros)
+        _mm_set1_epi16(0x7FFF)  //forbid almost all output codes
     );
     for (int i = 0; i < 32768; i++)
         data[i] = empty;
@@ -106,11 +106,11 @@ template<bool Validate> void DecoderLutTable<Validate>::ComputeEntry(const int *
     }
     assert(pos <= 16);
 
-    //generate max symbols values for validation 
-    int16_t maxValues[8];
+    //generate min symbols values for validation 
+    int16_t minValues[8];
     for (int i = 0; i < 8; i++) {
-        int sz = (i < cnt ? sizes[i] : 3);
-        maxValues[i] = (sz == 1 ? (1<<7) : sz == 2 ? (1<<11) : (1<<15)) - 1;
+        int sz = (i < cnt ? sizes[i] : 1);
+        minValues[i] = 0x8000 + (sz == 1 ? 0 : sz == 2 ? (1<<7) : (1<<11));
     }
 
     //store info into the lookup table
@@ -121,7 +121,7 @@ template<bool Validate> void DecoderLutTable<Validate>::ComputeEntry(const int *
         preSum,
         2 * cnt,
         _mm_loadu_si128((__m128i*)headerMask),
-        _mm_loadu_si128((__m128i*)maxValues)
+        _mm_loadu_si128((__m128i*)minValues)
     );
 }
 

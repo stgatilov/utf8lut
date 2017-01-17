@@ -18,7 +18,7 @@ struct DecoderCoreInfo {
 };
 struct DecoderValidationInfo {
     __m128i headerMask;                 //mask of "111..10" bits required in each byte
-    __m128i maxValues;                  //maximal allowed values of resulting symbols (signed 16-bit)
+    __m128i minValues;                  //minimal value allowed for not being overlong (sign-shifted, 16-bit)
 };
 
 //a single entry of each LUT is defined
