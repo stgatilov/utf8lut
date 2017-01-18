@@ -518,7 +518,7 @@ bool CheckResults(const std::unique_ptr<Data> &ans, const std::unique_ptr<Data> 
 void RunTest(const Data &data, const std::string &name, int d = -1) {
     std::string str(data.begin(), data.end());
     uint32_t hash = std::hash<std::string>()(str);
-    printf("%s[%u] (%08X): ", name.c_str(), unsigned(data.size()), hash);
+    printf("%30s [%7u] (%08X): ", name.c_str(), unsigned(data.size()), hash);
     Format dirs[4][2] = {
         {Utf8, Utf16},
         {Utf8, Utf32},
@@ -606,6 +606,8 @@ int main(int argc, char **argv) {
                 RunTestF(gen.CodesToData(gen.RandomCodes(i, b)), "%d_random_codes(%d)_%d", fmt, b, i);
     }
 
+    printf("================================================================================\n");
+
     for (int fmt = 0; fmt < UtfCount; fmt++) {
         TestsGenerator gen(Format(fmt), rnd);
         static const int K = 0x10091;
@@ -633,6 +635,8 @@ int main(int argc, char **argv) {
 		RunTestF(data, "%d_samecode_%d", fmt, 1000000);
     }
 
+    printf("================================================================================\n");
+
     while (1) {
 	    for (int fmt = 0; fmt < UtfCount; fmt++) {
 	        TestsGenerator gen(Format(fmt), rnd);
@@ -646,7 +650,8 @@ int main(int argc, char **argv) {
             RunTestF(data, "%d_all_shuffled_codes_M", fmt);
 
 	        for (int b = 1; b < 16; b++) {
-	        	Data data = gen.CodesToData(gen.RandomCodes(10000, b));
+                int len = std::uniform_int_distribution<int>(0, 10000)(rnd);
+	        	Data data = gen.CodesToData(gen.RandomCodes(len, b));
 	        	gen.MutateSeveral(data);
 	            RunTestF(data, "%d_random_codes(%d)_M", fmt, b);
 	        }
