@@ -69,8 +69,8 @@ public:
         data.push_back(word & 0xFFU);
     }
 
-    void AddChar(Data &data, int code) const {
-    	assert(IsCodeValid(code));
+    void AddChar(Data &data, int code, int utf8len = -1) const {
+    	//assert(IsCodeValid(code));
         if (format == Utf32) {
             WriteWord32(data, uint32_t(code));
         }
@@ -88,18 +88,18 @@ public:
         }
         else if (format == Utf8) {
             //from http://stackoverflow.com/a/6240184/556899
-            if (code <= 0x0000007F)             //0xxxxxxx
+            if (code <= 0x0000007F && utf8len <= 1)             //0xxxxxxx
                 WriteWord8(data, uint8_t(0x00 | ((code >>  0) & 0x7F)));
-            else if (code <= 0x000007FF) {      //110xxxxx 10xxxxxx
+            else if (code <= 0x000007FF && utf8len <= 2) {      //110xxxxx 10xxxxxx
                 WriteWord8(data, uint8_t(0xC0 | ((code >>  6) & 0x1F)));
                 WriteWord8(data, uint8_t(0x80 | ((code >>  0) & 0x3F)));
             }
-            else if (code <= 0x0000FFFF) {      //1110xxxx 10xxxxxx 10xxxxxx
+            else if (code <= 0x0000FFFF && utf8len <= 3) {      //1110xxxx 10xxxxxx 10xxxxxx
                 WriteWord8(data, uint8_t(0xE0 | ((code >> 12) & 0x0F)));
                 WriteWord8(data, uint8_t(0x80 | ((code >>  6) & 0x3F)));
                 WriteWord8(data, uint8_t(0x80 | ((code >>  0) & 0x3F)));
             }
-            else {                              //11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+            else {                                              //11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
                 WriteWord8(data, uint8_t(0xF0 | ((code >> 18) & 0x07)));
                 WriteWord8(data, uint8_t(0x80 | ((code >> 12) & 0x3F)));
                 WriteWord8(data, uint8_t(0x80 | ((code >>  6) & 0x3F)));
@@ -384,6 +384,24 @@ public:
         return hint;
     }
 
+    int MutateMakeOverlong(Data &data, int hint = -1) {
+        if (format != Utf8)
+            return hint;
+        int pos = FindSplit(data, PosByHint(data, hint));
+        const uint8_t *ptr = data.data() + pos;
+        try {
+            int code = ParseChar(data, ptr);
+            int next = ptr - data.data();
+            int len = next - pos;
+            len = Distrib(len, 4)(rnd);
+            Data prefD = Substr(data, 0, pos);
+            AddChar(prefD, code, len);
+            data = prefD + Substr(data, next);
+        }
+        catch (std::runtime_error &e) {}
+        return pos;
+    }
+
 //============ Mixes of several data ================
 
     static Data MixConcatenate(const Data &a, const Data &b) {
@@ -409,7 +427,7 @@ public:
 //============ apply many mutations ================
 
     int MutateAny(Data &data, int hint = -1) {
-		int t = Distrib(0, 8)(rnd);
+		int t = Distrib(0, 9)(rnd);
 		if (t == 0) return MutateDoubleBytes(data, hint);
 		if (t == 1) return MutateDoubleChars(data, hint);
 		if (t == 2) return MutateAddRandomBytes(data, hint);
@@ -418,6 +436,7 @@ public:
 		if (t == 5) return MutateRemoveRandomChars(data, hint);
 		if (t == 6) return MutateRevertBytes(data, hint);
 		if (t == 7) return MutateShortenEnd(data, hint);
+        if (t == 8) return MutateMakeOverlong(data, hint);
 		return hint;
     }
 
