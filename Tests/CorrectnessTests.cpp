@@ -402,6 +402,17 @@ public:
         return pos;
     }
 
+    int MutateAddWrongCode(Data &data, int hint = -1) {
+        int pos = FindSplit(data, PosByHint(data, hint));
+        int code;
+        if (Distrib(0, 2)(rnd))
+            code = Distrib(0xD800, 0xE000)(rnd);
+        else
+            code = Distrib(0x10FFFF, 0x1FFFFF)(rnd);
+        data = Substr(data, 0, pos) + CodeToData(code) + Substr(data, pos);
+        return pos;
+    }
+
 //============ Mixes of several data ================
 
     static Data MixConcatenate(const Data &a, const Data &b) {
@@ -437,6 +448,7 @@ public:
 		if (t == 6) return MutateRevertBytes(data, hint);
 		if (t == 7) return MutateShortenEnd(data, hint);
         if (t == 8) return MutateMakeOverlong(data, hint);
+        if (t == 9) return MutateAddWrongCode(data, hint);
 		return hint;
     }
 
