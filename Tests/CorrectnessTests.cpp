@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <time.h>
+#include <limits.h>
 #include <stdexcept>
 #include <memory>
 #include <algorithm>
