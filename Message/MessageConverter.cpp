@@ -10,7 +10,7 @@ ConversionResult ConvertInMemory(BaseBufferProcessor &processor, const char *inp
     result.inputSize = 0;
     result.outputSize = 0;
 
-    long long reqSize = processor.GetOutputBufferMinSize(inputSize);
+    long long reqSize = ContiguousOutput::GetMaxOutputSize(processor, inputSize);
     if (outputSize < reqSize) {
         result.status = csOverflowPossible;
         return result;
@@ -49,7 +49,7 @@ ConversionResult ConvertInMemory(BaseBufferProcessor &processor, const char *inp
 }
 
 long long ConvertInMemorySize(BaseBufferProcessor &processor, long long inputSize, char **outputBuffer) {
-    long long reqSize = processor.GetOutputBufferMinSize(inputSize);
+    long long reqSize = ContiguousOutput::GetMaxOutputSize(processor, inputSize);
     if (outputBuffer && *outputBuffer == 0)
         *outputBuffer = new char[reqSize];
     return reqSize;
