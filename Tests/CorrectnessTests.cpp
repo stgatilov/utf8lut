@@ -468,35 +468,78 @@ public:
 };
 
 
-std::unique_ptr<Data> SimpleConvert(const Data &data, Format from, Format to) {
+std::unique_ptr<Data> SimpleConvert(const Data &data, Format from, Format to, int *maxBytes = 0) {
     SimpleConverter Usrc(from), Udst(to);
     try {
         std::vector<int> codes = Usrc.ParseCodes(data);
+        if (maxBytes) {
+            int maxCode = (codes.empty() ? 0 : *std::max_element(codes.begin(), codes.end()));
+            int maxLen = 1;
+            while (maxCode > Usrc.MaxCodeOfSize(maxLen))
+                maxLen++;
+            *maxBytes = maxLen;
+        }
         Data answer = Udst.CodesToData(codes);
         return std::unique_ptr<Data>(new Data(std::move(answer)));
     }
     catch (std::exception &e) {
+        if (maxBytes) *maxBytes = INT_MAX;
         return nullptr;
     }
 }
 
-std::unique_ptr<BaseBufferProcessor> GenerateConverter(Format srcFormat, Format dstFormat) {
+std::unique_ptr<BaseBufferProcessor> GenerateConverter(Format srcFormat, Format dstFormat, int maxBytes, int checkMode, int streamsCnt) {
+    #define TRY_DEC(to, maxB, streams, mode) \
+        if (srcFormat == Utf8 && dstFormat == to && checkMode == mode && maxBytes == maxB && streamsCnt == streams) \
+            res.reset(new BufferDecoder<maxB, (to == Utf32 ? 4 : 2), mode, streams>());
+    #define TRY_ENC(from, maxB, streams, mode) \
+        if (srcFormat == from && dstFormat == Utf8 && checkMode == mode && maxBytes == maxB && streamsCnt == streams) \
+            res.reset(new BufferEncoder<maxB, (from == Utf32 ? 4 : 2), mode, streams>());
+
     std::unique_ptr<BaseBufferProcessor> res;
-    if (dstFormat == Utf8 && srcFormat == Utf16)
-        res.reset(new BufferEncoder<3, 2, emValidate, 1>());
-    else if (dstFormat == Utf8 && srcFormat == Utf32)
-        res.reset(new BufferEncoder<3, 4, emValidate, 1>());
-    else if (dstFormat == Utf16 && srcFormat == Utf8)
-        res.reset(new BufferDecoder<3, 2, dmValidate, 1>());
-    else if (dstFormat == Utf32 && srcFormat == Utf8)
-        res.reset(new BufferDecoder<3, 4, dmValidate, 1>());
+
+    TRY_DEC(Utf16, 1, 1, dmFast);
+    TRY_DEC(Utf16, 2, 1, dmFast);
+    TRY_DEC(Utf16, 3, 1, dmFast);
+    TRY_DEC(Utf16, 1, 1, dmFull);
+    TRY_DEC(Utf16, 2, 1, dmFull);
+    TRY_DEC(Utf16, 3, 1, dmFull);
+    TRY_DEC(Utf16, 1, 1, dmValidate);
+    TRY_DEC(Utf16, 2, 1, dmValidate);
+    TRY_DEC(Utf16, 3, 1, dmValidate);
+    TRY_DEC(Utf32, 1, 1, dmFast);
+    TRY_DEC(Utf32, 2, 1, dmFast);
+    TRY_DEC(Utf32, 3, 1, dmFast);
+    TRY_DEC(Utf32, 1, 1, dmFull);
+    TRY_DEC(Utf32, 2, 1, dmFull);
+    TRY_DEC(Utf32, 3, 1, dmFull);
+    TRY_DEC(Utf32, 1, 1, dmValidate);
+    TRY_DEC(Utf32, 2, 1, dmValidate);
+    TRY_DEC(Utf32, 3, 1, dmValidate);
+
+    TRY_ENC(Utf16, 1, 1, emFast);
+    TRY_ENC(Utf16, 2, 1, emFast);
+    TRY_ENC(Utf16, 3, 1, emFast);
+    TRY_ENC(Utf16, 1, 1, emFull);
+    TRY_ENC(Utf16, 2, 1, emFull);
+    TRY_ENC(Utf16, 3, 1, emFull);
+    TRY_ENC(Utf16, 1, 1, emValidate);
+    TRY_ENC(Utf16, 2, 1, emValidate);
+    TRY_ENC(Utf16, 3, 1, emValidate);
+    TRY_ENC(Utf32, 1, 1, emFast);
+    TRY_ENC(Utf32, 2, 1, emFast);
+    TRY_ENC(Utf32, 3, 1, emFast);
+    TRY_ENC(Utf32, 1, 1, emFull);
+    TRY_ENC(Utf32, 2, 1, emFull);
+    TRY_ENC(Utf32, 3, 1, emFull);
+    TRY_ENC(Utf32, 1, 1, emValidate);
+    TRY_ENC(Utf32, 2, 1, emValidate);
+    TRY_ENC(Utf32, 3, 1, emValidate);
+
     return res;
 }
 
-//TODO: template arguments?
-std::unique_ptr<Data> TestedConvert(const Data &data, Format from, Format to) {
-    auto processor = GenerateConverter(from, to);
-        
+std::unique_ptr<Data> TestedConvert(const Data &data, Format from, Format to, BaseBufferProcessor *processor) {
     long long outMaxSize = ConvertInMemorySize(*processor, data.size());
     Data answer(outMaxSize);
     auto res = ConvertInMemory(*processor, (const char*)data.data(), data.size(), (char*)answer.data(), answer.size());
@@ -515,47 +558,84 @@ bool CheckResults(const std::unique_ptr<Data> &ans, const std::unique_ptr<Data> 
     return *ans == *out;
 }
 
-void RunTest(const Data &data, const std::string &name, int d = -1) {
+void RunTest(const Data &data, const std::string &name, const std::string *options = 0) {
     std::string str(data.begin(), data.end());
     uint32_t hash = std::hash<std::string>()(str);
-    printf("%30s [%7u] (%08X): ", name.c_str(), unsigned(data.size()), hash);
-    Format dirs[4][2] = {
-        {Utf8, Utf16},
-        {Utf8, Utf32},
-        {Utf16, Utf8},
-        {Utf32, Utf8}
-    };
-    int minD = d < 0 ? 0 : d;
-    int maxD = d < 0 ? 3 : d;
-    for (int d = minD; d <= maxD; d++) {
-        Format from = dirs[d][0], to = dirs[d][1];
-        auto ans = SimpleConvert(data, from, to);
-        auto res = TestedConvert(data, from, to);
-        printf(" %c%c", (ans ? '.' : 'x'), (res ? '.' : 'x'));
-        if (!CheckResults(ans, res)) {
+    printf("%30s [%7u] (%08X):   ", name.c_str(), unsigned(data.size()), hash);
+
+    std::unique_ptr<Data> answer;
+
+    auto RunConversion = [&](Format from, Format to, int mode, int bytes, int streams) -> void {
+        auto processor = GenerateConverter(from, to, bytes, mode, streams);
+        auto result = TestedConvert(data, from, to, processor.get());
+        printf("%c", (result ? '#' : 'o'));
+
+        if (!CheckResults(answer, result)) {
             printf("Error!\n");
-            FILE *f = 0;
-            f = fopen("test_0info.txt", "wt");
-            fprintf(f, "%s (%08X): d = %d\n", name.c_str(), hash, d);
-            fprintf(f, "ans: %d\n", (ans ? (int)ans->size() : -1));
-            fprintf(f, "out: %d\n", (res ? (int)res->size() : -1));
-            fclose(f);
-            f = fopen("test_1in.bin", "wb");
-            fwrite(data.data(), data.size(), 1, f);
-            fclose(f);
-            if (ans) {
-                f = fopen("test_2ans.bin", "wb");
-                fwrite(ans->data(), ans->size(), 1, f);
+            if (!options) {
+                FILE *f = 0;
+                f = fopen("test_0info.txt", "wt");
+                fprintf(f, "%s (%08X)\n", name.c_str(), hash);
+                fprintf(f, "from = %d  to = %d  mode = %d  bytes = %d  streams = %d\n", from, to, mode, bytes, streams);
+                fprintf(f, "answer: %d\n", (answer ? (int)answer->size() : -1));
+                fprintf(f, "result: %d\n", (result ? (int)result->size() : -1));
                 fclose(f);
-            }
-            if (res) {
-                f = fopen("test_3out.bin", "wb");
-                fwrite(res->data(), res->size(), 1, f);
+                f = fopen("test_1in.bin", "wb");
+                fwrite(data.data(), data.size(), 1, f);
                 fclose(f);
+                if (answer) {
+                    f = fopen("test_2ans.bin", "wb");
+                    fwrite(answer->data(), answer->size(), 1, f);
+                    fclose(f);
+                }
+                if (result) {
+                    f = fopen("test_3res.bin", "wb");
+                    fwrite(result->data(), result->size(), 1, f);
+                    fclose(f);
+                }
             }
             std::terminate();
         }
+    };
+
+    auto RunDir = [&](Format from, Format to) -> void {
+        int maxBytes = -1;
+        answer = SimpleConvert(data, from, to, &maxBytes);
+        printf(" %c[", (answer ? '#' : 'o'));
+
+        for (int mode = 0; mode <= 2; mode++)
+            for (int bytes = 1; bytes <= 3; bytes++) {
+                if (mode != 2 && maxBytes == INT_MAX) {
+                    printf(".");
+                    continue;       //invalid input is supported only on "Validate" mode
+                }
+                if (mode == 0 && bytes < maxBytes) {
+                    printf(".");
+                    continue;       //no support for bigger codes in "Fast" mode 
+                }
+                RunConversion(from, to, mode, bytes, 1);
+            }
+
+        printf("]");
+    };
+
+
+    if (options) {
+        int fromX, toX, mode, bytes, streams;
+        sscanf(options->c_str(), "from = %d  to = %d  mode = %d  bytes = %d  streams = %d\n", &fromX, &toX, &mode, &bytes, &streams);
+        Format from = Format(fromX), to = Format(toX);
+        answer = SimpleConvert(data, from, to);
+        RunConversion(from, to, mode, bytes, streams);
     }
+    else {
+        for (int from = 0; from < UtfCount; from++)
+            for (int to = 0; to < UtfCount; to++) {
+                if ((from == Utf8) == (to == Utf8))
+                    continue;
+                RunDir(Format(from), Format(to));
+            }
+    }
+
     printf("\n");
 }
 
@@ -574,8 +654,9 @@ int main(int argc, char **argv) {
 		//replay old test, for debugging
         FILE *ft = fopen("test_0info.txt", "rt");
         char buff[256];
-        int Xd = -1;
-        fscanf(ft, "replay %s d = %d", buff, &Xd);
+        fgets(buff, 256, ft);
+        fgets(buff, 256, ft);
+        std::string options = buff;
         fclose(ft);
 	    FILE *fi = fopen("test_1in.bin", "rb");
 	    fseek(fi, 0, SEEK_END);
@@ -585,7 +666,7 @@ int main(int argc, char **argv) {
 	    fread(data.data(), 1, inputSize, fi);
 	    fclose(fi);
 
-	    RunTest(data, "replay", Xd);
+	    RunTest(data, "replay", &options);
 		return 0;
 	}
 
