@@ -34,7 +34,14 @@ struct EncoderCore {
                 return false;
         }
 
-        if (MaxBytes == 2) {
+        if (MaxBytes == 1) {
+            if (CheckExceed && !_mm_cmp_allone(_mm_cmpeq_epi16(_mm_andnot_si128(_mm_set1_epi16(0x007FU), reg), _mm_setzero_si128())))
+                return false;
+            __m128i res = _mm_packus_epi16(reg, _mm_setzero_si128());
+            _mm_storeu_si128((__m128i *)pDest, res);
+            pDest += 8;
+        }
+        else if (MaxBytes == 2) {
             //levels of bytes
             __m128i levelA = reg;                                                   //abcdefgh|ABCDEFGH
             __m128i levelB = _mm_srli_epi16(reg, 6);                                //ghABCDEF|GH......
