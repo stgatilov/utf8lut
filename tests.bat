@@ -1,1 +1,1 @@
-cl Tests/CorrectnessTests.cpp Base/Timing.cpp Core/DecoderLut.cpp Core/EncoderLut.cpp Buffer/BaseBufferProcessor.cpp Message/MessageConverter.cpp /I. /W2 /EHsc /Fe"tests_msvc.exe" /FAs /Zi /O2 /Oi /D _CRT_SECURE_NO_DEPRECATE /D TIMING /D NDEBUG /MD /link/opt:ref
+cl Tests/CorrectnessTests.cpp Base/Timing.cpp Core/DecoderLut.cpp Core/EncoderLut.cpp Buffer/BaseBufferProcessor.cpp Message/MessageConverter.cpp /I. /W2 /EHsc /Fe"tests_msvc.exe" /FAs /Zi /O2 /Oi /D _CRT_SECURE_NO_DEPRECATE /MD /link/opt:ref

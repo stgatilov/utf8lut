@@ -2,7 +2,8 @@
 #include <random>
 #include <stdint.h>
 #include <stdarg.h>
-#include <exception>
+#include <stdexcept>
+#include <memory>
 #include <algorithm>
 
 #include "Message/MessageConverter.h"
@@ -695,8 +696,8 @@ int main(int argc, char **argv) {
         std::vector<int> codes;
         for (int i = 0; i < K; i++) if (gen.IsCodeValid(i))
         	codes.push_back(i);
-        codes.push_back(gen.MaxCode);
-        codes.push_back(gen.MaxCode);
+        codes.push_back(int(gen.MaxCode));
+        codes.push_back(int(gen.MaxCode));
         for (int i = K-1; i >= 0; i--) if (gen.IsCodeValid(i))
         	codes.push_back(i);
 		Data data = gen.CodesToData(codes);
