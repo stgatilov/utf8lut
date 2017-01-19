@@ -2,6 +2,7 @@
 #include <random>
 #include <stdint.h>
 #include <stdarg.h>
+#include <time.h>
 #include <stdexcept>
 #include <memory>
 #include <algorithm>
@@ -651,28 +652,33 @@ void RunTestF(const Data &data, const char *format, ...) {
 
 
 int main(int argc, char **argv) {
-	if (argc >= 2 && strcmp(argv[1], "-r") == 0) {
-		//replay old test, for debugging
-        FILE *ft = fopen("test_0info.txt", "rt");
-        char buff[256];
-        fgets(buff, 256, ft);
-        fgets(buff, 256, ft);
-        std::string options = buff;
-        fclose(ft);
-	    FILE *fi = fopen("test_1in.bin", "rb");
-	    fseek(fi, 0, SEEK_END);
-	    int inputSize = ftell(fi);
-	    fseek(fi, 0, SEEK_SET);
-	 	Data data(inputSize);
-	    fread(data.data(), 1, inputSize, fi);
-	    fclose(fi);
-
-	    RunTest(data, "replay", &options);
-		return 0;
-	}
-
-
     RND rnd;
+
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "-r") == 0) {
+            //replay old test, for debugging
+            FILE *ft = fopen("test_0info.txt", "rt");
+            char buff[256];
+            fgets(buff, 256, ft);
+            fgets(buff, 256, ft);
+            std::string options = buff;
+            fclose(ft);
+            FILE *fi = fopen("test_1in.bin", "rb");
+            fseek(fi, 0, SEEK_END);
+            int inputSize = ftell(fi);
+            fseek(fi, 0, SEEK_SET);
+            Data data(inputSize);
+            fread(data.data(), 1, inputSize, fi);
+            fclose(fi);
+
+            RunTest(data, "replay", &options);
+            return 0;
+        }
+        if (strcmp(argv[i], "-nd") == 0) {
+            rnd.seed(time(0) + clock());
+        }
+    }
+
 
     RunTestF(Data(), "empty");
 
