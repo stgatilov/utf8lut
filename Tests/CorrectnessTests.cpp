@@ -499,45 +499,52 @@ std::unique_ptr<BaseBufferProcessor> GenerateConverter(Format srcFormat, Format 
         if (srcFormat == from && dstFormat == Utf8 && checkMode == mode && maxBytes == maxB && streamsCnt == streams) \
             res.reset(new BufferEncoder<maxB, (from == Utf32 ? 4 : 2), mode, streams>());
 
+    #define TRY_DEC_S(to, maxB, mode) \
+        TRY_DEC(to, maxB, 1, mode); \
+        TRY_DEC(to, maxB, 4, mode);
+    #define TRY_ENC_S(from, maxB, mode) \
+        TRY_ENC(from, maxB, 1, mode); \
+        TRY_ENC(from, maxB, 4, mode);
+
     std::unique_ptr<BaseBufferProcessor> res;
 
-    TRY_DEC(Utf16, 1, 1, dmFast);
-    TRY_DEC(Utf16, 2, 1, dmFast);
-    TRY_DEC(Utf16, 3, 1, dmFast);
-    TRY_DEC(Utf16, 1, 1, dmFull);
-    TRY_DEC(Utf16, 2, 1, dmFull);
-    TRY_DEC(Utf16, 3, 1, dmFull);
-    TRY_DEC(Utf16, 1, 1, dmValidate);
-    TRY_DEC(Utf16, 2, 1, dmValidate);
-    TRY_DEC(Utf16, 3, 1, dmValidate);
-    TRY_DEC(Utf32, 1, 1, dmFast);
-    TRY_DEC(Utf32, 2, 1, dmFast);
-    TRY_DEC(Utf32, 3, 1, dmFast);
-    TRY_DEC(Utf32, 1, 1, dmFull);
-    TRY_DEC(Utf32, 2, 1, dmFull);
-    TRY_DEC(Utf32, 3, 1, dmFull);
-    TRY_DEC(Utf32, 1, 1, dmValidate);
-    TRY_DEC(Utf32, 2, 1, dmValidate);
-    TRY_DEC(Utf32, 3, 1, dmValidate);
+    TRY_DEC_S(Utf16, 1, dmFast);
+    TRY_DEC_S(Utf16, 2, dmFast);
+    TRY_DEC_S(Utf16, 3, dmFast);
+    TRY_DEC_S(Utf16, 1, dmFull);
+    TRY_DEC_S(Utf16, 2, dmFull);
+    TRY_DEC_S(Utf16, 3, dmFull);
+    TRY_DEC_S(Utf16, 1, dmValidate);
+    TRY_DEC_S(Utf16, 2, dmValidate);
+    TRY_DEC_S(Utf16, 3, dmValidate);
+    TRY_DEC_S(Utf32, 1, dmFast);
+    TRY_DEC_S(Utf32, 2, dmFast);
+    TRY_DEC_S(Utf32, 3, dmFast);
+    TRY_DEC_S(Utf32, 1, dmFull);
+    TRY_DEC_S(Utf32, 2, dmFull);
+    TRY_DEC_S(Utf32, 3, dmFull);
+    TRY_DEC_S(Utf32, 1, dmValidate);
+    TRY_DEC_S(Utf32, 2, dmValidate);
+    TRY_DEC_S(Utf32, 3, dmValidate);
 
-    TRY_ENC(Utf16, 1, 1, emFast);
-    TRY_ENC(Utf16, 2, 1, emFast);
-    TRY_ENC(Utf16, 3, 1, emFast);
-    TRY_ENC(Utf16, 1, 1, emFull);
-    TRY_ENC(Utf16, 2, 1, emFull);
-    TRY_ENC(Utf16, 3, 1, emFull);
-    TRY_ENC(Utf16, 1, 1, emValidate);
-    TRY_ENC(Utf16, 2, 1, emValidate);
-    TRY_ENC(Utf16, 3, 1, emValidate);
-    TRY_ENC(Utf32, 1, 1, emFast);
-    TRY_ENC(Utf32, 2, 1, emFast);
-    TRY_ENC(Utf32, 3, 1, emFast);
-    TRY_ENC(Utf32, 1, 1, emFull);
-    TRY_ENC(Utf32, 2, 1, emFull);
-    TRY_ENC(Utf32, 3, 1, emFull);
-    TRY_ENC(Utf32, 1, 1, emValidate);
-    TRY_ENC(Utf32, 2, 1, emValidate);
-    TRY_ENC(Utf32, 3, 1, emValidate);
+    TRY_ENC_S(Utf16, 1, emFast);
+    TRY_ENC_S(Utf16, 2, emFast);
+    TRY_ENC_S(Utf16, 3, emFast);
+    TRY_ENC_S(Utf16, 1, emFull);
+    TRY_ENC_S(Utf16, 2, emFull);
+    TRY_ENC_S(Utf16, 3, emFull);
+    TRY_ENC_S(Utf16, 1, emValidate);
+    TRY_ENC_S(Utf16, 2, emValidate);
+    TRY_ENC_S(Utf16, 3, emValidate);
+    TRY_ENC_S(Utf32, 1, emFast);
+    TRY_ENC_S(Utf32, 2, emFast);
+    TRY_ENC_S(Utf32, 3, emFast);
+    TRY_ENC_S(Utf32, 1, emFull);
+    TRY_ENC_S(Utf32, 2, emFull);
+    TRY_ENC_S(Utf32, 3, emFull);
+    TRY_ENC_S(Utf32, 1, emValidate);
+    TRY_ENC_S(Utf32, 2, emValidate);
+    TRY_ENC_S(Utf32, 3, emValidate);
 
     return res;
 }
@@ -608,15 +615,18 @@ void RunTest(const Data &data, const std::string &name, const std::string *optio
 
         for (int mode = 0; mode <= 2; mode++)
             for (int bytes = 1; bytes <= 3; bytes++) {
-                if (mode != 2 && maxBytes == INT_MAX) {
-                    printf(".");
-                    continue;       //invalid input is supported only on "Validate" mode
+                static const int streams[] = {1, 4};
+                for (int s = 0; s < 2; s++) {
+                    if (mode != 2 && maxBytes == INT_MAX) {
+                        printf(".");
+                        continue;       //invalid input is supported only on "Validate" mode
+                    }
+                    if (mode == 0 && bytes < maxBytes) {
+                        printf(".");
+                        continue;       //no support for bigger codes in "Fast" mode 
+                    }
+                    RunConversion(from, to, mode, bytes, streams[s]);
                 }
-                if (mode == 0 && bytes < maxBytes) {
-                    printf(".");
-                    continue;       //no support for bigger codes in "Fast" mode 
-                }
-                RunConversion(from, to, mode, bytes, 1);
             }
 
         printf("]");
@@ -695,7 +705,11 @@ int main(int argc, char **argv) {
                 RunTestF(gen.CodesToData(gen.RandomCodes(i, b)), "%d_random_codes(%d)_%d", fmt, b, i);
     }
 
+    printf("\n");
     printf("================================================================================\n");
+    printf("                                                                                \n");
+    printf("================================================================================\n");
+    printf("\n");
 
     for (int fmt = 0; fmt < UtfCount; fmt++) {
         TestsGenerator gen(Format(fmt), rnd);
@@ -724,7 +738,11 @@ int main(int argc, char **argv) {
 		RunTestF(data, "%d_samecode_%d", fmt, 1000000);
     }
 
+    printf("\n");
     printf("================================================================================\n");
+    printf("                                                                                \n");
+    printf("================================================================================\n");
+    printf("\n");
 
     while (1) {
 	    for (int fmt = 0; fmt < UtfCount; fmt++) {
