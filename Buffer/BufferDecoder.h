@@ -121,9 +121,8 @@ public:
                 bool ok##k = ProcessSimple(inputPtr##k, inputEnd##k, outputPtr##k, true); \
                 inputDone = int(inputPtr##k - inputBuffer); \
                 outputDone[k] = int(outputPtr##k - outputBuffer[k]); \
-                if (!ok##k) \
-                    return false; \
-                if (k+1 < StreamsNum) assert(inputPtr##k == inputEnd##k);
+                if (!ok##k || (k+1 < StreamsNum && inputPtr##k != inputEnd##k)) \
+                    return false;
             STREAM_FINISH(0);
             STREAM_FINISH(1);
             STREAM_FINISH(2);
