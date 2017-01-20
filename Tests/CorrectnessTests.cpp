@@ -568,14 +568,35 @@ bool CheckResults(const std::unique_ptr<Data> &ans, const std::unique_ptr<Data> 
     return *ans == *out;
 }
 
+void DumpDataToFile(const Data *data, const char *filename) {
+    if (data) {
+        FILE *f = fopen(filename, "wb");
+        fwrite(data->data(), data->size(), 1, f);
+        fclose(f);
+    }
+}
+
+//enabled by console parameter (allows saving crashing tests before they happened)
+bool DumpCurrentInput = false;
+
 void RunTest(const Data &data, const std::string &name, const std::string *options = 0) {
     std::string str(data.begin(), data.end());
     uint32_t hash = std::hash<std::string>()(str);
     printf("%30s [%7u] (%08X):   ", name.c_str(), unsigned(data.size()), hash);
 
+    if (DumpCurrentInput)
+        DumpDataToFile(&data, "test_1in.bin");
+
     std::unique_ptr<Data> answer;
 
     auto RunConversion = [&](Format from, Format to, int mode, int bytes, int streams) -> void {
+        if (DumpCurrentInput) {
+            FILE *f = fopen("test_0info.txt", "wt");
+            fprintf(f, "%s (%08X)\n", name.c_str(), hash);
+            fprintf(f, "from = %d  to = %d  mode = %d  bytes = %d  streams = %d\n", from, to, mode, bytes, streams);
+            fclose(f);
+        }
+        
         auto processor = GenerateConverter(from, to, bytes, mode, streams);
         auto result = TestedConvert(data, from, to, processor.get());
         printf("%c", (result ? '#' : 'o'));
@@ -583,26 +604,15 @@ void RunTest(const Data &data, const std::string &name, const std::string *optio
         if (!CheckResults(answer, result)) {
             printf("Error!\n");
             if (!options) {
-                FILE *f = 0;
-                f = fopen("test_0info.txt", "wt");
+                FILE *f = fopen("test_0info.txt", "wt");
                 fprintf(f, "%s (%08X)\n", name.c_str(), hash);
                 fprintf(f, "from = %d  to = %d  mode = %d  bytes = %d  streams = %d\n", from, to, mode, bytes, streams);
                 fprintf(f, "answer: %d\n", (answer ? (int)answer->size() : -1));
                 fprintf(f, "result: %d\n", (result ? (int)result->size() : -1));
                 fclose(f);
-                f = fopen("test_1in.bin", "wb");
-                fwrite(data.data(), data.size(), 1, f);
-                fclose(f);
-                if (answer) {
-                    f = fopen("test_2ans.bin", "wb");
-                    fwrite(answer->data(), answer->size(), 1, f);
-                    fclose(f);
-                }
-                if (result) {
-                    f = fopen("test_3res.bin", "wb");
-                    fwrite(result->data(), result->size(), 1, f);
-                    fclose(f);
-                }
+                DumpDataToFile(&data, "test_1in.bin");
+                DumpDataToFile(answer.get(), "test_2ans.bin");
+                DumpDataToFile(result.get(), "test_3res.bin");
             }
             std::terminate();
         }
@@ -687,6 +697,9 @@ int main(int argc, char **argv) {
         }
         if (strcmp(argv[i], "-nd") == 0) {
             rnd.seed(time(0) + clock());
+        }
+        if (strcmp(argv[i], "-s") == 0) {
+            DumpCurrentInput = true;
         }
     }
 
