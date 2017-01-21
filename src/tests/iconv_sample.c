@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <io.h>
 #include <sys/stat.h>
-#include "iconv.h"
+#include "iconv/iconv.h"
 
 //sample taken from https://www.gnu.org/software/libc/manual/html_node/iconv-Examples.html
 //function file2wcs is slightly changed to convert UTF8 to UTF16
@@ -16,12 +16,12 @@ load_from_utf8_file (int fd, char *outbuf, size_t avail)
   int result = 0;
   iconv_t cd;
 
-  cd = iconv_open ("UTF-16", "UTF-8");
+  cd = iconv_open ("UTF-16LE", "UTF-8");
   if (cd == (iconv_t) -1)
     {
       /* Something went wrong.  */
       if (errno == EINVAL)
-        fprintf(stderr, "conversion from UTF-8 to UTF-16 not available");
+        fprintf(stderr, "conversion from UTF-8 to UTF-16LE not available\n");
       else
         perror ("iconv_open");
 
