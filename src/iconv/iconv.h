@@ -3,7 +3,7 @@
 
 //cross-platform export/import macro for shared library
 #ifdef _WIN32
-    #ifdef ICONV_UTF8LUT_BUILD
+    #if defined(ICONV_UTF8LUT_BUILD) || defined(iconv_u8l_EXPORTS)
         #define ICONV_UTF8LUT_EXPORT __declspec(dllexport) // Note: actually gcc seems to also supports this syntax.
     #else
         #define ICONV_UTF8LUT_EXPORT __declspec(dllimport) // Note: actually gcc seems to also supports this syntax.
