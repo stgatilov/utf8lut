@@ -53,7 +53,7 @@ public:
     }
 
     static bool IsCodeValid(int code) {
-		return code >= 0 && code <= MaxCode && !(code >= 0xD800U && code < 0xE000U);
+        return code >= 0 && code <= MaxCode && !(code >= 0xD800U && code < 0xE000U);
     }
 
     SimpleConverter(Format format) : format(format) {}
@@ -73,7 +73,7 @@ public:
     }
 
     void AddChar(Data &data, int code, int utf8len = -1) const {
-    	//assert(IsCodeValid(code));
+        //assert(IsCodeValid(code));
         if (format == Utf32) {
             WriteWord32(data, uint32_t(code));
         }
@@ -181,7 +181,7 @@ public:
         else assert(0);
 
         if (!IsCodeValid(code))
-        	throw std::runtime_error("Parsed invalid code point");
+            throw std::runtime_error("Parsed invalid code point");
 
         return code;
     }
@@ -441,33 +441,33 @@ public:
 //============ apply many mutations ================
 
     int MutateAny(Data &data, int hint = -1) {
-		int t = Distrib(0, 9)(rnd);
-		if (t == 0) return MutateDoubleBytes(data, hint);
-		if (t == 1) return MutateDoubleChars(data, hint);
-		if (t == 2) return MutateAddRandomBytes(data, hint);
-		if (t == 3) return MutateAddRandomChar(data, hint);
-		if (t == 4) return MutateRemoveRandomBytes(data, hint);
-		if (t == 5) return MutateRemoveRandomChars(data, hint);
-		if (t == 6) return MutateRevertBytes(data, hint);
-		if (t == 7) return MutateShortenEnd(data, hint);
+        int t = Distrib(0, 9)(rnd);
+        if (t == 0) return MutateDoubleBytes(data, hint);
+        if (t == 1) return MutateDoubleChars(data, hint);
+        if (t == 2) return MutateAddRandomBytes(data, hint);
+        if (t == 3) return MutateAddRandomChar(data, hint);
+        if (t == 4) return MutateRemoveRandomBytes(data, hint);
+        if (t == 5) return MutateRemoveRandomChars(data, hint);
+        if (t == 6) return MutateRevertBytes(data, hint);
+        if (t == 7) return MutateShortenEnd(data, hint);
         if (t == 8) return MutateMakeOverlong(data, hint);
         if (t == 9) return MutateAddWrongCode(data, hint);
-		return hint;
+        return hint;
     }
 
-	int MutateSeveral(Data &data, int hint = -1) {
-		int t = Distrib(0, 99)(rnd);
-		int k = 0;
-		if (t < 40) k = 1;
-		else if (t < 60) k = 2;
-		else if (t < 80) k = 5;
-		else k = 10;
-	
-	    for (int i = 0; i < k; i++)
-	    	hint = MutateAny(data, hint);
+    int MutateSeveral(Data &data, int hint = -1) {
+        int t = Distrib(0, 99)(rnd);
+        int k = 0;
+        if (t < 40) k = 1;
+        else if (t < 60) k = 2;
+        else if (t < 80) k = 5;
+        else k = 10;
+    
+        for (int i = 0; i < k; i++)
+            hint = MutateAny(data, hint);
 
-		return hint;
-	}
+        return hint;
+    }
 };
 
 
@@ -729,26 +729,26 @@ int main(int argc, char **argv) {
         static const int K = 0x10091;
         std::vector<int> codes;
         for (int i = 0; i < K; i++) if (gen.IsCodeValid(i))
-        	codes.push_back(i);
+            codes.push_back(i);
         codes.push_back(int(gen.MaxCode));
         codes.push_back(int(gen.MaxCode));
         for (int i = K-1; i >= 0; i--) if (gen.IsCodeValid(i))
-        	codes.push_back(i);
-		Data data = gen.CodesToData(codes);
-		RunTestF(data, "%d_all_sequental_codes", fmt);
+            codes.push_back(i);
+        Data data = gen.CodesToData(codes);
+        RunTestF(data, "%d_all_sequental_codes", fmt);
 
-		std::random_shuffle(codes.begin(), codes.end());
-		Data data2 = gen.CodesToData(codes);
-		RunTestF(data2, "%d_all_shuffled_codes", fmt);
+        std::random_shuffle(codes.begin(), codes.end());
+        Data data2 = gen.CodesToData(codes);
+        RunTestF(data2, "%d_all_shuffled_codes", fmt);
 
-		data = gen.CodesToData(std::vector<int>(1000, 0));
-		RunTestF(data, "%d_samecode_%d", fmt, 0);
-		data = gen.CodesToData(std::vector<int>(1001, 255));
-		RunTestF(data, "%d_samecode_%d", fmt, 255);
-		data = gen.CodesToData(std::vector<int>(1024, 65535));
-		RunTestF(data, "%d_samecode_%d", fmt, 65535);
-		data = gen.CodesToData(std::vector<int>(1017, 1000000));
-		RunTestF(data, "%d_samecode_%d", fmt, 1000000);
+        data = gen.CodesToData(std::vector<int>(1000, 0));
+        RunTestF(data, "%d_samecode_%d", fmt, 0);
+        data = gen.CodesToData(std::vector<int>(1001, 255));
+        RunTestF(data, "%d_samecode_%d", fmt, 255);
+        data = gen.CodesToData(std::vector<int>(1024, 65535));
+        RunTestF(data, "%d_samecode_%d", fmt, 65535);
+        data = gen.CodesToData(std::vector<int>(1017, 1000000));
+        RunTestF(data, "%d_samecode_%d", fmt, 1000000);
     }
 
     printf("\n");
@@ -758,25 +758,25 @@ int main(int argc, char **argv) {
     printf("\n");
 
     while (1) {
-	    for (int fmt = 0; fmt < UtfCount; fmt++) {
-	        TestsGenerator gen(Format(fmt), rnd);
+        for (int fmt = 0; fmt < UtfCount; fmt++) {
+            TestsGenerator gen(Format(fmt), rnd);
 
-	        std::vector<int> codes;
-	        for (int i = 0; i < 65600; i++) if (gen.IsCodeValid(i))
-	        	codes.push_back(i);
-			std::random_shuffle(codes.begin(), codes.end());
-			Data data = gen.CodesToData(codes);
-        	gen.MutateSeveral(data);
+            std::vector<int> codes;
+            for (int i = 0; i < 65600; i++) if (gen.IsCodeValid(i))
+                codes.push_back(i);
+            std::random_shuffle(codes.begin(), codes.end());
+            Data data = gen.CodesToData(codes);
+            gen.MutateSeveral(data);
             RunTestF(data, "%d_all_shuffled_codes_M", fmt);
 
-	        for (int b = 1; b < 16; b++) {
+            for (int b = 1; b < 16; b++) {
                 int len = std::uniform_int_distribution<int>(0, 10000)(rnd);
-	        	Data data = gen.CodesToData(gen.RandomCodes(len, b));
-	        	gen.MutateSeveral(data);
-	            RunTestF(data, "%d_random_codes(%d)_M", fmt, b);
-	        }
-	    }
-	}
+                Data data = gen.CodesToData(gen.RandomCodes(len, b));
+                gen.MutateSeveral(data);
+                RunTestF(data, "%d_random_codes(%d)_M", fmt, b);
+            }
+        }
+    }
 
 /*    for (int t = 32; t <= 1<<20; t *= 2)
         for (int i = t-20; i <= t+20; i++)
