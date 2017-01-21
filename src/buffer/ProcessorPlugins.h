@@ -174,7 +174,7 @@ class InteractiveOutput : public OutputPlugin {
 public:
     InteractiveOutput(BaseBufferProcessor &owner) : processor(&owner) {
         streamsCnt = processor->GetStreamsCount();
-        streamOutputSize = processor->GetOutputBufferMinSize(processor->GetInputBufferRecommendedSize());
+        streamOutputSize = (int)processor->GetOutputBufferMinSize(processor->GetInputBufferRecommendedSize());
         for (int i = 0; i < streamsCnt; i++)
             multiBuffer[i] = new char[streamOutputSize];
         processor->AddPlugin(*this);
