@@ -794,8 +794,14 @@ int main(int argc, char **argv) {
             gen.MutateSeveral(data);
             RunTestF(data, "%d_all_shuffled_codes_M", fmt);
 
+            int len = -1, r = std::uniform_int_distribution<int>(0, 100)(rnd);
+            if (false);
+            else if (r <  1) len = std::uniform_int_distribution<int>(100000, 1000000)(rnd);
+            else if (r < 10) len = std::uniform_int_distribution<int>(10000, 100000)(rnd);
+            else if (r < 40) len = std::uniform_int_distribution<int>(1000, 10000)(rnd);
+            else if (r < 70) len = std::uniform_int_distribution<int>(100, 1000)(rnd);
+            else if ( true ) len = std::uniform_int_distribution<int>(0, 100)(rnd);
             for (int b = 1; b < 16; b++) {
-                int len = std::uniform_int_distribution<int>(0, 10000)(rnd);
                 Data data = gen.CodesToData(gen.RandomCodes(len, b));
                 gen.MutateSeveral(data);
                 RunTestF(data, "%d_random_codes(%d)_M", fmt, b);
