@@ -9,13 +9,13 @@ enum ConversionStatus {
     //Input data is correct and complete.
     //Output was properly written.
 
-    csIncompleteData = 1,
-    //Input data is correct but INCOMPLETE.
-    //Converted and written to output maximal number of valid characters from input.
-
-    csOverflowPossible = 2,
+    csOverflowPossible = 1,
     //Conversion not attempted.
     //Output buffer is not large enough to hold any potential converted output.
+
+    csIncompleteData = 2,
+    //Input data is correct but INCOMPLETE.
+    //Converted and written to output maximal number of valid code points from input.
 
     csIncorrectData = 3,
     //Input data is INCORRECT.
