@@ -17,8 +17,9 @@ FORCEINLINE const char *FindUtf8Border(const char *pSource) {
         if ((byte & 0xC0U) == 0xC0U)
             return pSource + i;
     }
-    //input not valid: any border is OK
-    return pSource;
+    //four continuation bytes in a row
+    //split at the end, so that left half is surely invalid
+    return pSource + 4;
 }
 
 /**params:
