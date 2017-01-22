@@ -99,9 +99,10 @@ FORCEINLINE bool EncodeTrivial(const char *&pSource, const char *pEnd, char *&pD
             *d++ = uint8_t(0x80U + ((codepoint >> 6) & 0x3FU));
             *d++ = uint8_t(0x80U + (codepoint & 0x3FU));
         }
+
+        pSource = (const char *)s;
+        pDest = (char *)d;
     }
 
-    pSource = (const char *)s;
-    pDest = (char *)d;
     return true;
 }
