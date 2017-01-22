@@ -20,30 +20,29 @@ enum ConversionStatus {
     csIncorrectData = 3,
     //Input data is INCORRECT.
     //Conversion is done partially, but cannot be finished due to invalid input.
-    //Output buffer contains converted data for some part of the input (generally can be ignored).
+    //Output buffer contains converted data for the maximal correct prefix of the input.
+
+    csInputOutputNoAccess = 4,
+    //Cannot work with given input/output.
+    //In case of files: cannot find or open input file, or cannot write output file.
+    //In case of buffers: some non-empty buffer has zero pointer, or some buffer has negative size.
 };
 
 struct ConversionResult {
     //overall result of conversion (see above)
     ConversionStatus status;
-    //number of bytes read from input
+    //number of bytes read from input and successfully converted
     long long inputSize;
-    //number of bytes written to output
+    //number of bytes written to output being the result of conversion
+    //TODO: not true with 4-stream decoder!
     long long outputSize;
 };
 
 
 //======================================= In-memory conversion ====================================
 
-struct ConvertInMemorySettings {
-    //if true, then output is written using non-temporal writes
-    //bool writeNonTemporal;
-
-    ConvertInMemorySettings() /*: writeNonTemporal(true)*/ {}
-};
-
 //Convert from contiguous buffer in memory into another (non-overlapping) contiguous buffer in memory.
-ConversionResult ConvertInMemory(BaseBufferProcessor &processor, const char *inputBuffer, long long inputSize, char *outputBuffer, long long outputSize, ConvertInMemorySettings settings = ConvertInMemorySettings());
+ConversionResult ConvertInMemory(BaseBufferProcessor &processor, const char *inputBuffer, long long inputSize, char *outputBuffer, long long outputSize);
 
 //Request information about size of output buffer in ConvertInMemory routine.
 //Returns minimal allowed size of output buffer in bytes.
