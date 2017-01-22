@@ -135,8 +135,10 @@ public:
         return a + (b << 8) + (c << 16) + (d << 24);
     }
 
-    int ParseChar(const Data &data, const uint8_t *&ptr) const {
+    int ParseChar(const Data &data, const uint8_t *&uptr) const {
+        const uint8_t *ptr = uptr;
         uint32_t code = (uint32_t)-1;
+
         if (format == Utf32) {
             code = ParseWord32(data, ptr);
         }
@@ -183,6 +185,7 @@ public:
         if (!IsCodeValid(code))
             throw std::runtime_error("Parsed invalid code point");
 
+        uptr = ptr;
         return code;
     }
 
@@ -470,25 +473,44 @@ public:
     }
 };
 
+struct Result {
+    bool success;
+    int inDone;
+    Data data;
 
-std::unique_ptr<Data> SimpleConvert(const Data &data, Format from, Format to, int *maxBytes = 0) {
+    Result() : success(false), inDone(-1) {}
+    Result(bool success, int inDone, Data &&data) : success(success), inDone(inDone), data(std::move(data)) {}
+};
+
+Result SimpleConvert(const Data &data, Format from, Format to, int *maxBytes = 0) {
     SimpleConverter Usrc(from), Udst(to);
+
+    const uint8_t *ptr = data.data();
+    std::vector<int> codes;
+    bool error = false;
     try {
-        std::vector<int> codes = Usrc.ParseCodes(data);
-        if (maxBytes) {
+        while (ptr < data.data() + data.size()) {
+            int code = Usrc.ParseChar(data, ptr);
+            codes.push_back(code);
+        }
+    }
+    catch (std::exception &e) {
+        error = true;
+    }
+
+    if (maxBytes) {
+        if (error)
+            *maxBytes = INT_MAX;
+        else {
             int maxCode = (codes.empty() ? 0 : *std::max_element(codes.begin(), codes.end()));
             int maxLen = 1;
             while (maxCode > Usrc.MaxCodeOfSize(maxLen))
                 maxLen++;
             *maxBytes = maxLen;
         }
-        Data answer = Udst.CodesToData(codes);
-        return std::unique_ptr<Data>(new Data(std::move(answer)));
     }
-    catch (std::exception &e) {
-        if (maxBytes) *maxBytes = INT_MAX;
-        return nullptr;
-    }
+
+    return Result(!error, ptr - data.data(), Udst.CodesToData(codes));
 }
 
 std::unique_ptr<BaseBufferProcessor> GenerateConverter(Format srcFormat, Format dstFormat, int maxBytes, int checkMode, int streamsCnt) {
@@ -549,23 +571,26 @@ std::unique_ptr<BaseBufferProcessor> GenerateConverter(Format srcFormat, Format 
     return res;
 }
 
-std::unique_ptr<Data> TestedConvert(const Data &data, Format from, Format to, BaseBufferProcessor *processor) {
+Result TestedConvert(const Data &data, Format from, Format to, BaseBufferProcessor *processor) {
     long long outMaxSize = ConvertInMemorySize(*processor, data.size());
     Data answer(outMaxSize);
     auto res = ConvertInMemory(*processor, (const char*)data.data(), data.size(), (char*)answer.data(), answer.size());
-    if (res.status)
-        return nullptr;
+    assert(res.status != csOverflowPossible);
+    assert(res.status != csInputOutputNoAccess);
     answer.resize(res.outputSize);
-
-    return std::unique_ptr<Data>(new Data(std::move(answer)));
+    return Result(res.status == csSuccess, res.inputSize, std::move(answer));
 }
 
-bool CheckResults(const std::unique_ptr<Data> &ans, const std::unique_ptr<Data> &out) {
-    if (bool(ans) != bool(out))
-        return false;
-    if (!bool(ans))
-        return true;
-    return *ans == *out;
+bool CheckResults(const Result &ans, const Result &out) {
+    if (ans.success != out.success)
+        return false;   //validity check failed
+    if (ans.inDone != out.inDone)
+        return false;   //processed different number of bytes
+    if (ans.data.size() != out.data.size())
+        return false;   //produced different number of bytes
+    if (ans.data != out.data)
+        return false;   //output data is wrong
+    return true;
 }
 
 void DumpDataToFile(const Data *data, const char *filename) {
@@ -587,7 +612,7 @@ void RunTest(const Data &data, const std::string &name, const std::string *optio
     if (DumpCurrentInput)
         DumpDataToFile(&data, "test_1in.bin");
 
-    std::unique_ptr<Data> answer;
+    Result answer;
 
     auto RunConversion = [&](Format from, Format to, int mode, int bytes, int streams) -> void {
         if (DumpCurrentInput) {
@@ -599,7 +624,7 @@ void RunTest(const Data &data, const std::string &name, const std::string *optio
         
         auto processor = GenerateConverter(from, to, bytes, mode, streams);
         auto result = TestedConvert(data, from, to, processor.get());
-        printf("%c", (result ? '#' : 'o'));
+        printf("%c", (result.success ? '#' : 'o'));
 
         if (!CheckResults(answer, result)) {
             printf("Error!\n");
@@ -607,12 +632,12 @@ void RunTest(const Data &data, const std::string &name, const std::string *optio
                 FILE *f = fopen("test_0info.txt", "wt");
                 fprintf(f, "%s (%08X)\n", name.c_str(), hash);
                 fprintf(f, "from = %d  to = %d  mode = %d  bytes = %d  streams = %d\n", from, to, mode, bytes, streams);
-                fprintf(f, "answer: %d\n", (answer ? (int)answer->size() : -1));
-                fprintf(f, "result: %d\n", (result ? (int)result->size() : -1));
+                fprintf(f, "answer: %d -> %d  (%s)\n", answer.inDone, (int)answer.data.size(), answer.success ? "OK" : "WR");
+                fprintf(f, "result: %d -> %d  (%s)\n", result.inDone, (int)result.data.size(), result.success ? "OK" : "WR");
                 fclose(f);
                 DumpDataToFile(&data, "test_1in.bin");
-                DumpDataToFile(answer.get(), "test_2ans.bin");
-                DumpDataToFile(result.get(), "test_3res.bin");
+                DumpDataToFile(&answer.data, "test_2ans.bin");
+                DumpDataToFile(&result.data, "test_3res.bin");
             }
             std::terminate();
         }
@@ -621,7 +646,7 @@ void RunTest(const Data &data, const std::string &name, const std::string *optio
     auto RunDir = [&](Format from, Format to) -> void {
         int maxBytes = -1;
         answer = SimpleConvert(data, from, to, &maxBytes);
-        printf(" %c[", (answer ? '#' : 'o'));
+        printf(" %c[", (answer.success ? '#' : 'o'));
 
         for (int mode = 0; mode <= 2; mode++)
             for (int bytes = 1; bytes <= 3; bytes++) {
