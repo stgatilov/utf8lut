@@ -51,7 +51,7 @@ size_t iconv(iconv_t cd, const char **inbuf, size_t *inbytesleft, char **outbuf,
     }
 
     long long remains = input.GetRemainingDataSize();
-    long long converted = output.GetBufferSize();
+    long long converted = output.GetFilledOutputSize();
     *inbuf += *inbytesleft - remains;
     *inbytesleft = remains;
     *outbuf += converted;
