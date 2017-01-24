@@ -7,14 +7,15 @@
 #include "iconv/iconv.h"
 
 //sample taken from https://www.gnu.org/software/libc/manual/html_node/iconv-Examples.html
-//function file2wcs is slightly changed to convert UTF8 to UTF16
+//function file2wcs is slightly changed to convert UTF8 to UTF16, plus "result" is global
+int result;
 int
 load_from_utf8_file (int fd, char *outbuf, size_t avail)
 {
   char inbuf[BUFSIZ];
   size_t insize = 0;
   char *wrptr = outbuf;
-  int result = 0;
+  result = 0;
   iconv_t cd;
 
   cd = iconv_open ("UTF-16LE", "UTF-8");
@@ -112,11 +113,13 @@ int main() {
   int diffclock = clock() - startclock;
   fprintf(stderr, "Elapsed time: %d ms\n", diffclock * 1000 / CLOCKS_PER_SEC);
   if (convsize < 0) {
-    perror("load_from_utf8_file");
-    fprintf(stderr, "Error happened during conversion.\n");
+    fprintf(stderr, "Conversion not possible.\n");
     return 2;
   }
-  fprintf(stderr, "Conversion finished successfully.\n");
+  if (result == 0)
+    fprintf(stderr, "Conversion finished successfully.\n");
+  else
+    fprintf(stderr, "Error happened during conversion.\n");
 
   unsigned char xorsum = 0;
   for (int i = 0; i < convsize; i++)
