@@ -11,3 +11,4 @@ u8u16/*
 *.pdb
 *.ilk
 *.s
+data/*
