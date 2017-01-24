@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <io.h>
 #include <sys/stat.h>
+#include <time.h>
 #include "iconv/iconv.h"
 
 //sample taken from https://www.gnu.org/software/libc/manual/html_node/iconv-Examples.html
@@ -106,7 +107,10 @@ int main() {
   size_t outsize = stats.st_size * 2 + 16;
   char *outbuf = (char*)malloc(outsize);
 
+  int startclock = clock();
   int convsize = load_from_utf8_file(fd, outbuf, outsize);
+  int diffclock = clock() - startclock;
+  fprintf(stderr, "Elapsed time: %d ms\n", diffclock * 1000 / CLOCKS_PER_SEC);
   if (convsize < 0) {
     perror("load_from_utf8_file");
     fprintf(stderr, "Error happened during conversion.\n");
