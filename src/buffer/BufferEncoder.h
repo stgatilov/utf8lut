@@ -55,7 +55,7 @@ public:
     BufferEncoder() {
         static_assert(MaxBytes >= 1 && MaxBytes <= 3, "MaxBytes must be between 1 and 3");
         static_assert(InputType == 2 || InputType == 4, "InputType must be either 2 or 4");
-        static_assert(Mode >= 0 && Mode <= dmAllCount, "Mode must be from EncoderMode enum");
+        static_assert(Mode >= 0 && Mode <= emAllCount, "Mode must be from EncoderMode enum");
         static_assert(UnrollNum == 0 || UnrollNum == 1 || UnrollNum == 4, "UnrollNum must be 0, 1 or 4");
     }
 
