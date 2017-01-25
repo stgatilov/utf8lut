@@ -5,6 +5,8 @@
 #include <limits.h>
 
 BaseBufferProcessor::BaseBufferProcessor() {
+    errorCallback = 0;
+    errorContext = 0;
     Clear();
 }
 BaseBufferProcessor::~BaseBufferProcessor() {
@@ -19,8 +21,6 @@ void BaseBufferProcessor::Clear() {
     memset(outputDone, 0, sizeof(outputDone));
     SetMode();
     pluginsCount = 0;
-    errorCallback = 0;
-    errorContext = 0;
 }
 
 void BaseBufferProcessor::SetInputBuffer(const char *ptr, int size) {

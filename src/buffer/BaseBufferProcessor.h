@@ -56,6 +56,7 @@ public:
 
     //sets callback which would be fired each time conversion raises an error
     //if the callback returns true, then error is resolved and conversion continues
+    //note: error callback is NOT cleared when Clear method is called
     typedef void *ctxErrorCallback;
     typedef bool (*pfErrorCallback)(ctxErrorCallback context, const char *&srcBuffer, int srcBytes, char *&dstBuffer, int dstBytes);
     bool SetErrorCallback(pfErrorCallback callback = 0, ctxErrorCallback context = 0);
