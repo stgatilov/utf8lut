@@ -6,6 +6,9 @@
 #include <time.h>
 #include "iconv/iconv.h"
 
+//note: the default MSVC value 512 is inefficent today
+#define BUFSIZ (1<<18)
+
 //sample taken from https://www.gnu.org/software/libc/manual/html_node/iconv-Examples.html
 //function file2wcs is slightly changed to convert UTF8 to UTF16, plus "result" is global
 int result;
