@@ -54,11 +54,19 @@ public:
     //add input/output plugins to make some things easier
     void AddPlugin(BasePlugin &addedPlugin);
 
+    //sets callback which would be fired each time conversion raises an error
+    //if the callback returns true, then error is resolved and conversion continues
+    typedef void *ctxErrorCallback;
+    typedef bool (*pfErrorCallback)(ctxErrorCallback context, const char *&srcBuffer, int srcBytes, char *&dstBuffer, int dstBytes);
+    bool SetErrorCallback(pfErrorCallback callback = 0, ctxErrorCallback context = 0);
+    
 private:
     virtual bool _Process() = 0;
 
     BasePlugin *plugins[MaxPluginsCount];
     int pluginsCount;
+    pfErrorCallback errorCallback;
+    ctxErrorCallback errorContext;
 
 protected:  //accessed in implementations
     const char *inputBuffer;

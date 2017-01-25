@@ -130,8 +130,8 @@ public:
             STREAM_FINISH(3);
         }
         else {
-            const char *inputPtr = inputBuffer;
-            char *outputPtr = outputBuffer[0];
+            const char *inputPtr = inputBuffer + inputDone;
+            char *outputPtr = outputBuffer[0] + outputDone[0];
             bool ok;
             if (StreamsNum == 1) 
                 ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, lastBlockMode);

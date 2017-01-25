@@ -73,8 +73,8 @@ public:
     virtual bool _Process() {
         TIMING_START(ENCODE);
 
-        const char *inputPtr = inputBuffer;
-        char *outputPtr = outputBuffer[0];
+        const char *inputPtr = inputBuffer + inputDone;
+        char *outputPtr = outputBuffer[0] + outputDone[0];
 
         if (UnrollNum == 4) {
             const EncoderLutEntry *RESTRICT ptrTable = EncoderLutTable<ThreeBytes>::GetArray();

@@ -19,6 +19,8 @@ void BaseBufferProcessor::Clear() {
     memset(outputDone, 0, sizeof(outputDone));
     SetMode();
     pluginsCount = 0;
+    errorCallback = 0;
+    errorContext = 0;
 }
 
 void BaseBufferProcessor::SetInputBuffer(const char *ptr, int size) {
@@ -70,7 +72,20 @@ bool BaseBufferProcessor::Process() {
     assert(CheckBuffers());
     inputDone = 0;
     memset(outputDone, 0, sizeof(outputDone));
-    bool res =  _Process();
+
+    bool res = _Process();
+    while (!res && errorCallback) {
+        const char *inputPtr = inputBuffer + inputDone;
+        char *outputPtr = outputBuffer[0] + outputDone[0];
+        bool fixed = errorCallback(errorContext, inputPtr, inputSize - inputDone, outputPtr, outputSize[0] - outputDone[0]);
+        inputDone = inputPtr - inputBuffer;
+        outputDone[0] = outputPtr - outputBuffer[0];
+        assert(inputDone >= 0 && inputDone <= inputSize);
+        assert(outputDone[0] >= 0 && outputDone[0] <= outputSize[0]);
+        if (!fixed)
+            break;
+        res = _Process();
+    }
 
     for (int i = pluginsCount-1; i >= 0; i--)
         plugins[i]->Post();
@@ -89,4 +104,12 @@ int BaseBufferProcessor::GetOutputDoneSize(int index) const {
 void BaseBufferProcessor::AddPlugin(BasePlugin &addedPlugin) {
     assert(pluginsCount < MaxPluginsCount);
     plugins[pluginsCount++] = &addedPlugin;
+}
+
+bool BaseBufferProcessor::SetErrorCallback(pfErrorCallback callback, ctxErrorCallback context) {
+    if (GetStreamsCount() > 1)
+        return false;   //not supported
+    errorCallback = callback;
+    errorContext = context;
+    return true;
 }
