@@ -27,8 +27,7 @@ static inline uint64_t get_ticks() {
 #define TIMING_SLOTS(X) \
     X(DECODE, 1) \
     X(ENCODE, 2) \
-    X(TEMP, 3) \
-    X(MAX, 4)
+    X(MAX, 3)
 
 //======================================================
 
@@ -65,14 +64,14 @@ extern TimingData timingData;
     startTime = 0; \
 }
 
-void TimingPrintAll();
-#define TIMING_PRINT() TimingPrintAll();
+void TimingPrintAll(FILE *f);
+#define TIMING_PRINT(f) TimingPrintAll(f);
 
 #else
 //if not asked (TIMING undefined), then define empty macros
 
 #define TIMING_START(name)
 #define TIMING_END(name, elems)
-#define TIMING_PRINT()
+#define TIMING_PRINT(f)
 
 #endif

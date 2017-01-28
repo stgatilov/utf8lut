@@ -8,7 +8,14 @@
 
 const int MAX_POS_ARGS = 2;
 const int MAX_ARG_LEN = 1<<12;
+FILE * const LOG_FILE = stderr;
 
+void logprintf(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    vfprintf(LOG_FILE, format, args);
+    va_end(args);
+}
 
 void strtolower(char *s) {
     for (int i = 0; s[i]; i++)
@@ -20,7 +27,7 @@ void Check(bool condition, const char *format, ...) {
         return;
     va_list args;
     va_start(args, format);
-    vfprintf(stderr, format, args);
+    vfprintf(LOG_FILE, format, args);
     va_end(args);
     exit(17);
 }
@@ -74,27 +81,30 @@ struct Config {
         Check(srcFormat == dfUtf8 || dstFormat == dfUtf8, "Either source of destination encoding must be UTF-8\n");
         Check(!fileToFile || (srcPath[0] && dstPath[0]), "Both input and output must be file paths when using file-to-file mode\n");
         Check(maxBytesFast >= 1 && maxBytesFast <= 3, "Fast path can process up to 1-byte, 2-byte, or 3-byte code points (%d)\n", maxBytesFast);
-        Check(!errorCorrection || smallConverter, "Error correction is only supported in 'small' mode\n");
+        if (errorCorrection && !smallConverter) {
+            smallConverter = true;
+            logprintf("Note: Error correction forces 'small' mode of processor\n");
+        }
 
-        fprintf(stderr, "Starting the following conversion");
+        logprintf("Starting the following conversion");
         if (numberOfRuns != 1)
-            fprintf(stderr, " (%d times)", numberOfRuns);
-        fprintf(stderr, ":\n");
-        fprintf(stderr, "  Input (source) in %s: %s\n", GetFormatStr(srcFormat), srcPath);
-        fprintf(stderr, "  Output (dest.) in %s: %s\n", GetFormatStr(dstFormat), dstPath);
+            logprintf(" (%d times)", numberOfRuns);
+        logprintf(":\n");
+        logprintf("  Input (source) in %s: %s\n", GetFormatStr(srcFormat), srcPath);
+        logprintf("  Output (dest.) in %s: %s\n", GetFormatStr(dstFormat), dstPath);
         if (fileToFile) 
-            fprintf(stderr, "  Direct file-to-file conversion\n");
+            logprintf("  Direct file-to-file conversion\n");
 
-        fprintf(stderr, "Processor settings:\n");
-        fprintf(stderr, "  Fast path supports code points with up to %d bytes in UTF-8\n", maxBytesFast);
+        logprintf("Processor settings:\n");
+        logprintf("  Fast path supports code points with up to %d bytes in UTF-8\n", maxBytesFast);
         if (smallConverter)
-            fprintf(stderr, "  Using small converter, i.e. single stream / no unrolling\n");
+            logprintf("  Using small processor, i.e. single stream / no unrolling\n");
         else
-            fprintf(stderr, "  Using big converter, i.e. four streams / 4x unrolling\n");
+            logprintf("  Using big converter, i.e. four streams / 4x unrolling\n");
         if (errorCorrection)
-            fprintf(stderr, "  Error correction enabled\n");
+            logprintf("  Error correction enabled\n");
         else
-            fprintf(stderr, "  Stops on any incorrect input\n");
+            logprintf("  Stops on any incorrect input\n");
     }
 };
 
@@ -124,7 +134,7 @@ bool IsSameResult (const ConversionResult &a, const ConversionResult &b) {
     return a.status == b.status && a.inputSize == b.inputSize && a.outputSize == b.outputSize;
 }
 void PrintResult(const ConversionResult &res) {
-    fprintf(stderr, "Conversion result: %s;   converted %" PRId64 " bytes -> %" PRId64 " bytes\n",
+    logprintf("Conversion result: %s;   converted %" PRId64 " bytes -> %" PRId64 " bytes\n",
         res.status == csSuccess ? "success" :
         res.status == csOverflowPossible ? "OVERFLOW" :
         res.status == csIncompleteData ? "incomplete data" :
@@ -153,7 +163,7 @@ int main(int argc, char **argv) {
 
         if (0);
         else if (strcmp(larg, "-h") == 0 || strcmp(larg, "--help") == 0) {
-            fprintf(stderr, 
+            logprintf(
                 "TODO!\n"
             );
             exit(1);
@@ -187,11 +197,12 @@ int main(int argc, char **argv) {
             posArgsCnt++;
         }
         else
-            fprintf(stderr, "Ignored command line parameter: %s\n", arg);
+            logprintf("Ignored command line parameter: %s\n", arg);
     }
 
     Check(posArgsCnt == 2, "Must specify input and output files as two positional arguments\n");
     cfg.Init();
+    logprintf("\n");
 
     int errorCounter = 0;
     BaseBufferProcessor *processor = GenerateProcessor(
@@ -203,7 +214,7 @@ int main(int argc, char **argv) {
         cfg.errorCorrection ? &errorCounter : 0
     );
     Check(processor, "Cannot generate processor with specified parameters!\n");
-    fprintf(stderr, "Generated processor for conversion\n");
+    logprintf("Generated processor for conversion\n");
 
     ConversionResult allResult;
     clock_t startTime = clock();
@@ -211,7 +222,7 @@ int main(int argc, char **argv) {
         for (int r = 0; r < cfg.numberOfRuns; r++) {
             ConversionResult convres = ConvertFiles(*processor, cfg.srcPath, cfg.dstPath);
             if (r && !IsSameResult(allResult, convres))
-                fprintf(stderr, "Consecutive conversion runs produce different results!\n");
+                logprintf("Consecutive conversion runs produce different results!\n");
             allResult = convres;
         }
     }
@@ -226,7 +237,7 @@ int main(int argc, char **argv) {
         for (int r = 0; r < cfg.numberOfRuns; r++) {
             ConversionResult convres = ConvertInMemory(*processor, inputData, inputSize, outputData, outputSize);
             if (r && !IsSameResult(allResult, convres))
-                fprintf(stderr, "Consecutive conversion runs produce different results!\n");
+                logprintf("Consecutive conversion runs produce different results!\n");
             allResult = convres;
         }
 
@@ -235,12 +246,19 @@ int main(int argc, char **argv) {
     clock_t endTime = clock();
     double elapsedTime = double(endTime - startTime) / CLOCKS_PER_SEC;
 
-    fprintf(stderr, "Task finished in %0.3lf seconds\n", elapsedTime);
+    logprintf("Task finished in %0.3lf seconds\n", elapsedTime);
     PrintResult(allResult);
 
     delete processor;
     processor = 0;
-    fprintf(stderr, "Processor destroyed\n");
+    logprintf("Destroyed processor\n");
+
+    logprintf("\n");
+
+#ifdef TIMING
+    logprintf("Internal timings:\n");
+    TimingPrintAll(LOG_FILE);
+#endif
 
     return 0;
 }
