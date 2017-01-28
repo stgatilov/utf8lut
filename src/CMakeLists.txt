@@ -59,3 +59,12 @@ ADD_EXECUTABLE (iconv_sample
 )
 TARGET_LINK_LIBRARIES (iconv_sample iconv_u8l)
 
+ADD_EXECUTABLE (FileConverter
+    ${base_sources}
+    ${core_sources}
+    ${buffer_sources}
+    ${message_sources}
+    buffer/AllProcessors.cpp
+    tests/FileConverter.cpp
+)
+set_target_properties(FileConverter PROPERTIES COMPILE_DEFINITIONS "TIMING")
