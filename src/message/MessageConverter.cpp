@@ -37,7 +37,6 @@ ConversionResult ConvertInMemory(BaseBufferProcessor &processor, const char *inp
         }
     }
 
-    //TODO: do we always properly set the sizes/bytes for 4 streams?
     result.inputSize = input.GetProcessedInputSize();
     result.outputSize = output.GetFilledOutputSize();
 

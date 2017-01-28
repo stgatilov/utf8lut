@@ -34,7 +34,6 @@ struct ConversionResult {
     //number of bytes read from input and successfully converted
     long long inputSize;
     //number of bytes written to output being the result of conversion
-    //TODO: not true with 4-stream decoder!
     long long outputSize;
 };
 
