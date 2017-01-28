@@ -150,6 +150,7 @@ int MaxCodeOf(int bytes) {
 int MyRandom() { return (rand() << 15) ^ rand(); }
 void GenerateRandomSource(char *&buffer, long long &size, int format, int cnt, bool allowedLens[4]) {
     assert(!buffer);
+    srand(0); rand(); rand();
     int *buff32 = new int[cnt];
     for (int i = 0; i < cnt; i++) {
         int b;
@@ -328,7 +329,7 @@ int main(int argc, char **argv) {
             logprintf("Computed hash value of output: %08X\n", hash);
         }
         else {
-            WriteFileContents(cfg.dstPath, outputData, outputSize);
+            WriteFileContents(cfg.dstPath, outputData, allResult.outputSize);
             logprintf("Wrote output buffer to file\n");
         }
 
