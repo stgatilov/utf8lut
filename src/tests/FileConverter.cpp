@@ -54,6 +54,7 @@ struct Config {
     int srcFormat;              // -s=%s
     int dstFormat;              // -d=%s
     int maxBytesFast;           // -b=%d
+    int checkMode;              // -m=%d
     bool smallConverter;        // --small
     bool errorCorrection;       // -ec
     bool fileToFile;            // --file
@@ -67,6 +68,7 @@ struct Config {
     Config() {
         srcFormat = dfUtf8;
         dstFormat = dfUtf16;
+        checkMode = cmValidate;
         maxBytesFast = 3;
         smallConverter = false;
         errorCorrection = false;
@@ -83,9 +85,14 @@ struct Config {
         Check(srcFormat == dfUtf8 || dstFormat == dfUtf8, "Either source of destination encoding must be UTF-8\n");
         Check(!fileToFile || (srcPath[0] && dstPath[0]), "Both input and output must be file paths when using file-to-file mode\n");
         Check(maxBytesFast >= 1 && maxBytesFast <= 3, "Fast path can process up to 1-byte, 2-byte, or 3-byte code points (%d)\n", maxBytesFast);
+        Check(checkMode >= cmFast && checkMode <= cmValidate, "Checking mode must be 0 (fast), 1 (full), or 2 (validate)  (%d)", checkMode);
         if (errorCorrection && !smallConverter) {
             smallConverter = true;
-            logprintf("Note: Error correction forces 'small' mode of processor\n");
+            logprintf("Note: Error correction forces usage of 'small' processor\n");
+        }
+        if (errorCorrection && checkMode != cmValidate) {
+            checkMode = cmValidate;
+            logprintf("Note: Error correction forces 'validate' mode of processor\n");
         }
 
         logprintf("Starting the following conversion");
@@ -106,6 +113,7 @@ struct Config {
 
         logprintf("Processor settings:\n");
         logprintf("  Fast path supports code points with up to %d bytes in UTF-8\n", maxBytesFast);
+        logprintf("  Mode of input checking is: %s\n", (checkMode == cmFast ? "fast" : checkMode == cmFull ? "full" : "validate"));
         if (smallConverter)
             logprintf("  Using small processor, i.e. single stream / no unrolling\n");
         else
@@ -242,6 +250,8 @@ int main(int argc, char **argv) {
             cfg.srcFormat = GetFormatOfEncoding(str);
         else if (sscanf(larg, "-d=%s", &str) == 1)
             cfg.dstFormat = GetFormatOfEncoding(str);
+        else if (sscanf(larg, "-m=%d", &num) == 1)
+            cfg.checkMode = num;
         else if (sscanf(larg, "-b=%d", &num) == 1)
             cfg.maxBytesFast = num;
         else if (strcmp(larg, "--small") == 0)
@@ -284,7 +294,7 @@ int main(int argc, char **argv) {
         cfg.srcFormat,
         cfg.dstFormat,
         cfg.maxBytesFast,
-        cmValidate,
+        cfg.checkMode,
         cfg.smallConverter ? 1 : 4,
         cfg.errorCorrection ? &errorCounter : 0
     );
