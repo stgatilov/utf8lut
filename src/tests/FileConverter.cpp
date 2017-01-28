@@ -5,6 +5,7 @@
 #include <time.h>
 #include "Buffer/ProcessorSelector.h"
 #include "Message/MessageConverter.h"
+#include "Core/ProcessTrivial.h"    //only for random inputs
 
 const int MAX_POS_ARGS = 2;
 const int MAX_ARG_LEN = 1<<12;
@@ -59,7 +60,8 @@ struct Config {
     int numberOfRuns;           // -k=%d
     char srcPath[MAX_ARG_LEN];
     char dstPath[MAX_ARG_LEN];
-    int srcRandomMask;          // input: [rnd%c%c%c%c]
+    int srcRandomLen;           // input: [rnd%c%c%c%c:%d]
+    bool srcRandomChars[4];     // -- | --
     bool dstPrintHash;          // output: [hash]
     
     Config() {
@@ -72,7 +74,7 @@ struct Config {
         numberOfRuns = 1;
         srcPath[0] = 0;
         dstPath[0] = 0;
-        srcRandomMask = -1;
+        srcRandomLen = -1;
         dstPrintHash = false;
     }
     void Init() {
@@ -90,7 +92,14 @@ struct Config {
         if (numberOfRuns != 1)
             logprintf(" (%d times)", numberOfRuns);
         logprintf(":\n");
-        logprintf("  Input (source) in %s: %s\n", GetFormatStr(srcFormat), srcPath);
+        char randomSrcMessage[256] = {0};
+        if (srcRandomLen >= 0) {
+            char temp[16], tl = 0;
+            for (int t = 0; t < 4; t++) if (srcRandomChars[t]) temp[tl++] = '1' + t;
+            temp[tl] = 0;
+            sprintf(randomSrcMessage, "[random: %d chars of [%s]]", srcRandomLen, temp);
+        }
+        logprintf("  Input (source) in %s: %s\n", GetFormatStr(srcFormat), (srcRandomLen >= 0 ? randomSrcMessage : srcPath));
         logprintf("  Output (dest.) in %s: %s\n", GetFormatStr(dstFormat), (dstPrintHash ? "[print hash]" : dstPath));
         if (fileToFile) 
             logprintf("  Direct file-to-file conversion\n");
@@ -127,6 +136,58 @@ void WriteFileContents(const char *filename, char *buffer, long long size) {
     FILE *fo = fopen(filename, "wb");
     fwrite(buffer, 1, size, fo);
     fclose(fo);
+}
+
+int MaxCodeOf(int bytes) {
+    if (bytes == 0) return -1;
+    if (bytes == 1) return 0x0000007F;
+    if (bytes == 2) return 0x000007FF;
+    if (bytes == 3) return 0x0000FFFF;
+    return 0x10FFFF;
+}
+int MyRandom() { return (rand() << 15) ^ rand(); }
+void GenerateRandomSource(char *&buffer, long long &size, int format, int cnt, bool allowedLens[4]) {
+    assert(!buffer);
+    int *buff32 = new int[cnt];
+    for (int i = 0; i < cnt; i++) {
+        int b;
+        do { b = rand() & 3; } while (!allowedLens[b]);
+        b++;
+        int minV = MaxCodeOf(b-1) + 1, maxV = MaxCodeOf(b);
+        int code;
+        do {
+            code = minV + MyRandom() % (maxV - minV + 1);
+        } while (code >= 0xD800 && code < 0xE000);
+        buff32[i] = code;
+    }
+    if (format == dfUtf32) {
+        buffer = (char*)(void*)buff32;
+        size = 4*cnt;
+        return;
+    }
+    char *buff8 = new char[4*cnt];
+    char *buff8end;
+    {
+        const char *ptr = (char*)buff32;
+        buff8end = buff8;
+        EncodeTrivial<4>(ptr, (char*)(buff32 + cnt), buff8end);
+        delete[] buff32;
+    }
+    if (format == dfUtf8) {
+        buffer = buff8;
+        size = buff8end - buff8;
+        return;
+    }
+    char *buff16 = new char[4*cnt];
+    char *buff16end;
+    {
+        const char *ptr = buff8;
+        buff16end = buff16;
+        DecodeTrivial<2>(ptr, buff8end, buff16end);
+        delete[] buff8;
+    }
+    buffer = buff16;
+    size = buff16end - buff16;
 }
 
 
@@ -191,8 +252,13 @@ int main(int argc, char **argv) {
         else if (larg[0] != '-') {
             Check(posArgsCnt < MAX_POS_ARGS, "No more positional arguments allowed: %s\n", arg);
             if (0 == posArgsCnt) {
-                //sscanf("[rnd%c%c%c%c]", &)    //TODO
-                strcpy(cfg.srcPath, arg);
+                if (sscanf(larg, "[rnd%c%c%c%c:%d]", str+0, str+1, str+2, str+3, &num) == 5) {
+                    cfg.srcRandomLen = num;
+                    for (int t = 0; t < 4; t++)
+                        cfg.srcRandomChars[t] = strchr("1tTyY+", str[t]) != 0;
+                }
+                else
+                    strcpy(cfg.srcPath, arg);
             }
             if (1 == posArgsCnt) {
                 if (strcmp(larg, "[hash]") == 0)
