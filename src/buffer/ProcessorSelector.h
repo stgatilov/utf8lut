@@ -6,7 +6,16 @@
 //metaprogramming helper
 template<bool Condition, class First, class Second> struct TernaryOperator {};
 template<class First, class Second> struct TernaryOperator<true, First, Second> { typedef First Type; };
-template<class First, class Second> struct TernaryOperator<false, First, Second> { typedef First Type; };
+template<class First, class Second> struct TernaryOperator<false, First, Second> { typedef Second Type; };
+
+//possible formats of input/output data
+enum DataFormat {
+    dfUtf8,
+    dfUtf16,
+    dfUtf32,
+    dfUtfCount    //helper
+};
+
 
 //modes of conversion (synchronized with EncoderMode and DecoderMode)
 //TODO: full explanations here!
@@ -17,20 +26,20 @@ enum ConversionMode {
 };
 
 //This selector can be used to get type of processor by options, e.g.:
-//  typedef ProcessorSelector<1, 2>::WithOptions<cmValidate, 2>::Processor MyProcessor;
+//  typedef ProcessorSelector<0, 1>::WithOptions<cmValidate, 2>::Processor MyProcessor;
 //  BaseBufferProcessor *processor = new MyProcessor();
 //TODO: more explanations, all options, what about error handlers?
-template<int SrcUnitSize, int DstUnitSize>
+template<int SrcFormat, int DstFormat>
 struct ProcessorSelector {
-    static_assert(SrcUnitSize == 1 || SrcUnitSize == 2 || SrcUnitSize == 4, "Supported unit sizes: UTF-8 = 1, UTF-16 = 2, UTF-32 = 4");
-    static_assert(DstUnitSize == 1 || DstUnitSize == 2 || DstUnitSize == 4, "Supported unit sizes: UTF-8 = 1, UTF-16 = 2, UTF-32 = 4");
-    static_assert((SrcUnitSize == 1) != (DstUnitSize == 1), "Supported only conversions: from UTF-8 or to UTF-8");
+    static_assert(SrcFormat >= 0 && SrcFormat < dfUtfCount, "Unsupported format");
+    static_assert(DstFormat >= 0 && DstFormat < dfUtfCount, "Unsupported format");
+    static_assert((SrcFormat == dfUtf8) != (DstFormat == dfUtf8), "Supported only conversions: from UTF-8 or to UTF-8");
 
     template<int Mode = cmValidate, int MaxBytes = 3, int SpeedMult = 1>
     struct WithOptions {
-        typedef typename TernaryOperator<SrcUnitSize == 1,
-            BufferDecoder<MaxBytes, DstUnitSize, Mode, SpeedMult>,
-            BufferEncoder<MaxBytes, SrcUnitSize, Mode, SpeedMult>
+        typedef typename TernaryOperator<SrcFormat == dfUtf8,
+            BufferDecoder<MaxBytes, (DstFormat == dfUtf32 ? 4 : 2), Mode, SpeedMult>,
+            BufferEncoder<MaxBytes, (SrcFormat == dfUtf32 ? 4 : 2), Mode, SpeedMult>
         >::Type Processor;
     };
 
@@ -47,35 +56,37 @@ struct ProcessorSelector {
 // implementation of some stuff
 //==============================
 
-template<int SrcUnitSize, int DstUnitSize>
-bool ProcessorSelector<SrcUnitSize, DstUnitSize>::OnErrorMissCodeUnits(
+FORCEINLINE int GetUnitSizeOfFormat(int format) { return format == dfUtf8 ? 1 : format == dfUtf16 ? 2 : 4; }
+
+template<int SrcFormat, int DstFormat>
+bool ProcessorSelector<SrcFormat, DstFormat>::OnErrorMissCodeUnits(
     void *context, const char *&srcBuffer, int srcBytes, char *&dstBuffer, int dstBytes
 ) {
     int &counter = *(int*)context;
-    srcBuffer += SrcUnitSize;
+    srcBuffer += GetUnitSizeOfFormat(SrcFormat);
     counter++;
     return true;
 }
 
-template<int SrcUnitSize, int DstUnitSize>
-bool ProcessorSelector<SrcUnitSize, DstUnitSize>::OnErrorSetReplacementChars(
+template<int SrcFormat, int DstFormat>
+bool ProcessorSelector<SrcFormat, DstFormat>::OnErrorSetReplacementChars(
     void *context, const char *&srcBuffer, int srcBytes, char *&dstBuffer, int dstBytes
 ) {
     int &counter = *(int*)context;
-    srcBuffer += SrcUnitSize;
+    srcBuffer += GetUnitSizeOfFormat(SrcFormat);
     counter++;
-    if (DstUnitSize == 1) {
+    if (DstFormat == dfUtf8) {
         if (dstBytes < 3) return false;
         *dstBuffer++ = (char)0xEF;
         *dstBuffer++ = (char)0xBF;
         *dstBuffer++ = (char)0xBD;
     }
-    else if (DstUnitSize == 2) {
+    else if (DstFormat == dfUtf16) {
         if (dstBytes < 2) return false;
         *dstBuffer++ = (char)0xFD;
         *dstBuffer++ = (char)0xFF;
     }
-    else if (DstUnitSize == 4) {
+    else if (DstFormat == dfUtf32) {
         if (dstBytes < 4) return false;
         *dstBuffer++ = (char)0xFD;
         *dstBuffer++ = (char)0xFF;

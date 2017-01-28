@@ -25,6 +25,7 @@ SET (buffer_sources
     buffer/BufferDecoder.h
     buffer/BufferEncoder.h
     buffer/ProcessorPlugins.h
+    buffer/ProcessorSelector.h
 )
 SET (message_sources
     message/MessageConverter.cpp
@@ -40,6 +41,7 @@ ADD_EXECUTABLE (CorrectnessTests
     ${core_sources}
     ${buffer_sources}
     ${message_sources}
+    buffer/AllProcessors.cpp
     tests/CorrectnessTests.cpp
 )
 

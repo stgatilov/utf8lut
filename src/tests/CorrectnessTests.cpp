@@ -9,14 +9,12 @@
 #include <algorithm>
 
 #include "Message/MessageConverter.h"
-#include "Buffer/BufferDecoder.h"
-#include "Buffer/BufferEncoder.h"
+#include "Buffer/ProcessorSelector.h"
 
 
 #define RND std::mt19937
 
 typedef std::vector<uint8_t> Data;
-enum Format { Utf8, Utf16, Utf32, UtfCount };
 
 //simple string operations
 Data operator+ (const Data &a, const Data &b) {
@@ -38,7 +36,7 @@ Data Reverse(const Data &data) {
 
 class SimpleConverter {
 protected:
-    Format format;  
+    DataFormat format;  
 
 public:
     static const int MaxCode = 0x10FFFF;
@@ -56,7 +54,7 @@ public:
         return code >= 0 && code <= MaxCode && !(code >= 0xD800U && code < 0xE000U);
     }
 
-    SimpleConverter(Format format) : format(format) {}
+    SimpleConverter(DataFormat format) : format(format) {}
 
     static void WriteWord8(Data &data, uint8_t word) {
         data.push_back(word & 0xFFU);
@@ -74,10 +72,10 @@ public:
 
     void AddChar(Data &data, int code, int utf8len = -1) const {
         //assert(IsCodeValid(code));
-        if (format == Utf32) {
+        if (format == dfUtf32) {
             WriteWord32(data, uint32_t(code));
         }
-        else if (format == Utf16) {
+        else if (format == dfUtf16) {
             //from https://ru.wikipedia.org/wiki/UTF-16#.D0.9A.D0.BE.D0.B4.D0.B8.D1.80.D0.BE.D0.B2.D0.B0.D0.BD.D0.B8.D0.B5
             if (code < 0x10000)
                 WriteWord16(data, uint16_t(code));
@@ -89,7 +87,7 @@ public:
                 WriteWord16(data, uint16_t(0xDC00 | lo10));
             }
         }
-        else if (format == Utf8) {
+        else if (format == dfUtf8) {
             //from http://stackoverflow.com/a/6240184/556899
             if (code <= 0x0000007F && utf8len <= 1)             //0xxxxxxx
                 WriteWord8(data, uint8_t(0x00 | ((code >>  0) & 0x7F)));
@@ -139,10 +137,10 @@ public:
         const uint8_t *ptr = uptr;
         uint32_t code = (uint32_t)-1;
 
-        if (format == Utf32) {
+        if (format == dfUtf32) {
             code = ParseWord32(data, ptr);
         }
-        else if (format == Utf16) {
+        else if (format == dfUtf16) {
             code = ParseWord16(data, ptr);
             if (code >= 0xD800U && code < 0xDC00U) {
                 uint32_t rem = ParseWord16(data, ptr);
@@ -151,7 +149,7 @@ public:
                 code = ((code - 0xD800U) << 10) + (rem - 0xDC00U) + 0x010000;
             }
         }
-        else if (format == Utf8) {
+        else if (format == dfUtf8) {
             code = ParseWord8(data, ptr);
             int cnt;
             if ((code & 0x80U) == 0x00U)            //0xxxxxxx
@@ -231,11 +229,11 @@ public:
     //if input is invalid, then any split can be returned
     int FindSplit(const Data &data, int pos) const {
         pos = std::max(std::min(pos, (int)data.size()), 0);
-        if (format == Utf32) {
+        if (format == dfUtf32) {
             //align with 32-bit words
             while (pos & 3) pos++;
         }
-        else if (format == Utf16) {
+        else if (format == dfUtf16) {
             //align with 16-bit words
             while (pos & 1) pos++;
             //check if in the middle of surrogate pair
@@ -245,7 +243,7 @@ public:
                     pos += 2;   //move past surrogate's second half
             }
         }
-        else if (format == Utf8) {
+        else if (format == dfUtf8) {
             //move past continuation bytes (at most 3 of them)
             for (int i = 0; i < 3; i++)
                 if (pos < data.size() && data[pos] >= 0x80U && data[pos] < 0xC0U)
@@ -264,7 +262,7 @@ protected:
     typedef std::uniform_int_distribution<int> Distrib;
 
 public:
-    BaseGenerator(Format format, RND &rnd) : SimpleConverter(format), rnd(rnd) {}
+    BaseGenerator(DataFormat format, RND &rnd) : SimpleConverter(format), rnd(rnd) {}
 
 //=============== Data generation ==================
 
@@ -319,7 +317,7 @@ class TestsGenerator : public BaseGenerator {
     int mutRad;
 
 public:
-    TestsGenerator (Format format, RND &rnd) : BaseGenerator(format, rnd) {
+    TestsGenerator (DataFormat format, RND &rnd) : BaseGenerator(format, rnd) {
         SetMutationRadius();
     }
 
@@ -391,7 +389,7 @@ public:
     }
 
     int MutateMakeOverlong(Data &data, int hint = -1) {
-        if (format != Utf8)
+        if (format != dfUtf8)
             return hint;
         int pos = FindSplit(data, PosByHint(data, hint));
         const uint8_t *ptr = data.data() + pos;
@@ -482,7 +480,7 @@ struct Result {
     Result(bool success, int inDone, Data &&data) : success(success), inDone(inDone), data(std::move(data)) {}
 };
 
-Result SimpleConvert(const Data &data, Format from, Format to, int *maxBytes = 0) {
+Result SimpleConvert(const Data &data, DataFormat from, DataFormat to, int *maxBytes = 0) {
     SimpleConverter Usrc(from), Udst(to);
 
     const uint8_t *ptr = data.data();
@@ -513,65 +511,10 @@ Result SimpleConvert(const Data &data, Format from, Format to, int *maxBytes = 0
     return Result(!error, ptr - data.data(), Udst.CodesToData(codes));
 }
 
-std::unique_ptr<BaseBufferProcessor> GenerateConverter(Format srcFormat, Format dstFormat, int maxBytes, int checkMode, int streamsCnt) {
-    #define TRY_DEC(to, maxB, streams, mode) \
-        if (srcFormat == Utf8 && dstFormat == to && checkMode == mode && maxBytes == maxB && streamsCnt == streams) \
-            res.reset(new BufferDecoder<maxB, (to == Utf32 ? 4 : 2), mode, streams>());
-    #define TRY_ENC(from, maxB, streams, mode) \
-        if (srcFormat == from && dstFormat == Utf8 && checkMode == mode && maxBytes == maxB && streamsCnt == streams) \
-            res.reset(new BufferEncoder<maxB, (from == Utf32 ? 4 : 2), mode, streams>());
+//linked from AllProcessors.cpp
+BaseBufferProcessor *GenerateProcessor(int srcFormat, int dstFormat, int maxBytes, int checkMode, int multiplier);
 
-    #define TRY_DEC_S(to, maxB, mode) \
-        TRY_DEC(to, maxB, 1, mode); \
-        TRY_DEC(to, maxB, 4, mode);
-    #define TRY_ENC_S(from, maxB, mode) \
-        TRY_ENC(from, maxB, 1, mode); \
-        TRY_ENC(from, maxB, 4, mode);
-
-    std::unique_ptr<BaseBufferProcessor> res;
-
-    TRY_DEC_S(Utf16, 1, dmFast);
-    TRY_DEC_S(Utf16, 2, dmFast);
-    TRY_DEC_S(Utf16, 3, dmFast);
-    TRY_DEC_S(Utf16, 1, dmFull);
-    TRY_DEC_S(Utf16, 2, dmFull);
-    TRY_DEC_S(Utf16, 3, dmFull);
-    TRY_DEC_S(Utf16, 1, dmValidate);
-    TRY_DEC_S(Utf16, 2, dmValidate);
-    TRY_DEC_S(Utf16, 3, dmValidate);
-    TRY_DEC_S(Utf32, 1, dmFast);
-    TRY_DEC_S(Utf32, 2, dmFast);
-    TRY_DEC_S(Utf32, 3, dmFast);
-    TRY_DEC_S(Utf32, 1, dmFull);
-    TRY_DEC_S(Utf32, 2, dmFull);
-    TRY_DEC_S(Utf32, 3, dmFull);
-    TRY_DEC_S(Utf32, 1, dmValidate);
-    TRY_DEC_S(Utf32, 2, dmValidate);
-    TRY_DEC_S(Utf32, 3, dmValidate);
-
-    TRY_ENC_S(Utf16, 1, emFast);
-    TRY_ENC_S(Utf16, 2, emFast);
-    TRY_ENC_S(Utf16, 3, emFast);
-    TRY_ENC_S(Utf16, 1, emFull);
-    TRY_ENC_S(Utf16, 2, emFull);
-    TRY_ENC_S(Utf16, 3, emFull);
-    TRY_ENC_S(Utf16, 1, emValidate);
-    TRY_ENC_S(Utf16, 2, emValidate);
-    TRY_ENC_S(Utf16, 3, emValidate);
-    TRY_ENC_S(Utf32, 1, emFast);
-    TRY_ENC_S(Utf32, 2, emFast);
-    TRY_ENC_S(Utf32, 3, emFast);
-    TRY_ENC_S(Utf32, 1, emFull);
-    TRY_ENC_S(Utf32, 2, emFull);
-    TRY_ENC_S(Utf32, 3, emFull);
-    TRY_ENC_S(Utf32, 1, emValidate);
-    TRY_ENC_S(Utf32, 2, emValidate);
-    TRY_ENC_S(Utf32, 3, emValidate);
-
-    return res;
-}
-
-Result TestedConvert(const Data &data, Format from, Format to, BaseBufferProcessor *processor) {
+Result TestedConvert(const Data &data, DataFormat from, DataFormat to, BaseBufferProcessor *processor) {
     long long outMaxSize = ConvertInMemorySize(*processor, data.size());
     Data answer(outMaxSize);
     auto res = ConvertInMemory(*processor, (const char*)data.data(), data.size(), (char*)answer.data(), answer.size());
@@ -614,7 +557,7 @@ void RunTest(const Data &data, const std::string &name, const std::string *optio
 
     Result answer;
 
-    auto RunConversion = [&](Format from, Format to, int mode, int bytes, int streams) -> void {
+    auto RunConversion = [&](DataFormat from, DataFormat to, int mode, int bytes, int streams) -> void {
         if (DumpCurrentInput) {
             FILE *f = fopen("test_0info.txt", "wt");
             fprintf(f, "%s (%08X)\n", name.c_str(), hash);
@@ -622,7 +565,7 @@ void RunTest(const Data &data, const std::string &name, const std::string *optio
             fclose(f);
         }
         
-        auto processor = GenerateConverter(from, to, bytes, mode, streams);
+        std::unique_ptr<BaseBufferProcessor> processor(GenerateProcessor(from, to, bytes, mode, streams));
         auto result = TestedConvert(data, from, to, processor.get());
         printf("%c", (result.success ? '#' : 'o'));
 
@@ -643,7 +586,7 @@ void RunTest(const Data &data, const std::string &name, const std::string *optio
         }
     };
 
-    auto RunDir = [&](Format from, Format to) -> void {
+    auto RunDir = [&](DataFormat from, DataFormat to) -> void {
         int maxBytes = -1;
         answer = SimpleConvert(data, from, to, &maxBytes);
         printf(" %c[", (answer.success ? '#' : 'o'));
@@ -671,16 +614,16 @@ void RunTest(const Data &data, const std::string &name, const std::string *optio
     if (options) {
         int fromX, toX, mode, bytes, streams;
         sscanf(options->c_str(), "from = %d  to = %d  mode = %d  bytes = %d  streams = %d\n", &fromX, &toX, &mode, &bytes, &streams);
-        Format from = Format(fromX), to = Format(toX);
+        DataFormat from = DataFormat(fromX), to = DataFormat(toX);
         answer = SimpleConvert(data, from, to);
         RunConversion(from, to, mode, bytes, streams);
     }
     else {
-        for (int from = 0; from < UtfCount; from++)
-            for (int to = 0; to < UtfCount; to++) {
-                if ((from == Utf8) == (to == Utf8))
+        for (int from = 0; from < dfUtfCount; from++)
+            for (int to = 0; to < dfUtfCount; to++) {
+                if ((from == dfUtf8) == (to == dfUtf8))
                     continue;
-                RunDir(Format(from), Format(to));
+                RunDir(DataFormat(from), DataFormat(to));
             }
     }
 
@@ -731,12 +674,12 @@ int main(int argc, char **argv) {
 
     RunTestF(Data(), "empty");
 
-    TestsGenerator gl(Utf32, rnd);
+    TestsGenerator gl(dfUtf32, rnd);
     for (int i = 1; i <= 32; i++)
         RunTestF(gl.RandomBytes(i), "random_bytes_%d", i);
 
-    for (int fmt = 0; fmt < UtfCount; fmt++) {
-        TestsGenerator gen(Format(fmt), rnd);
+    for (int fmt = 0; fmt < dfUtfCount; fmt++) {
+        TestsGenerator gen(DataFormat(fmt), rnd);
 
         for (int i = 1; i <= 32; i++)
             for (int b = 1; b < 16; b++)
@@ -749,8 +692,8 @@ int main(int argc, char **argv) {
     printf("================================================================================\n");
     printf("\n");
 
-    for (int fmt = 0; fmt < UtfCount; fmt++) {
-        TestsGenerator gen(Format(fmt), rnd);
+    for (int fmt = 0; fmt < dfUtfCount; fmt++) {
+        TestsGenerator gen(DataFormat(fmt), rnd);
         static const int K = 0x10091;
         std::vector<int> codes;
         for (int i = 0; i < K; i++) if (gen.IsCodeValid(i))
@@ -783,8 +726,8 @@ int main(int argc, char **argv) {
     printf("\n");
 
     while (1) {
-        for (int fmt = 0; fmt < UtfCount; fmt++) {
-            TestsGenerator gen(Format(fmt), rnd);
+        for (int fmt = 0; fmt < dfUtfCount; fmt++) {
+            TestsGenerator gen(DataFormat(fmt), rnd);
 
             std::vector<int> codes;
             for (int i = 0; i < 65600; i++) if (gen.IsCodeValid(i))
@@ -813,8 +756,8 @@ int main(int argc, char **argv) {
         for (int i = t-20; i <= t+20; i++)
             RunTestF(gl.RandomBytes(i), "random_bytes_%d", i);
 
-    for (int fmt = 0; fmt < UtfCount; fmt++) {
-        TestsGenerator gen(Format(fmt), rnd);
+    for (int fmt = 0; fmt < dfUtfCount; fmt++) {
+        TestsGenerator gen(DataFormat(fmt), rnd);
 
         for (int t = 32; t <= 1<<18; t *= 2)
             for (int i = t-10; i <= t+10; i++)

@@ -3,6 +3,7 @@ cl ^
     %ROOT%Core/DecoderLut.cpp ^
     %ROOT%Core/EncoderLut.cpp ^
     %ROOT%Buffer/BaseBufferProcessor.cpp ^
+    %ROOT%Buffer/AllProcessors.cpp ^
     %ROOT%Message/MessageConverter.cpp ^
     %ROOT%Tests/CorrectnessTests.cpp ^
     /I"../src" /Fe"CorrectnessTests_msvc.exe" ^
