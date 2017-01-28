@@ -351,6 +351,12 @@ int main(int argc, char **argv) {
 
     logprintf("The task was finished in %0.3lf seconds\n", elapsedTime);
     PrintResult(allResult);
+    if (cfg.errorCorrection) {
+        if (errorCounter > 0)
+            logprintf("Fixed erratic code units: %d\n", errorCounter);
+        else
+            logprintf("No errors detected\n");
+    }
 
     delete processor;
     processor = 0;
