@@ -100,7 +100,7 @@ bool ProcessorSelector<SrcFormat, DstFormat>::OnErrorSetReplacementChars(
 
 template<int SrcFormat, int DstFormat>
 template<int Mode, int MaxBytes, int SpeedMult>
-typename ProcessorSelector<SrcFormat, DstFormat>::WithOptions<Mode, MaxBytes, SpeedMult>::Processor *
+typename ProcessorSelector<SrcFormat, DstFormat>::template WithOptions<Mode, MaxBytes, SpeedMult>::Processor *
 ProcessorSelector<SrcFormat, DstFormat>::WithOptions<Mode, MaxBytes, SpeedMult>::Create(int *errorCounter) {
     Processor *result = new Processor();
     if (errorCounter)

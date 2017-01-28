@@ -1,5 +1,5 @@
 set ROOT=../src/
-cl ^
+g++ ^
     %ROOT%Base/Timing.cpp ^
     %ROOT%Core/DecoderLut.cpp ^
     %ROOT%Core/EncoderLut.cpp ^
@@ -7,7 +7,8 @@ cl ^
     %ROOT%Buffer/AllProcessors.cpp ^
     %ROOT%Message/MessageConverter.cpp ^
     %ROOT%Tests/FileConverter.cpp ^
-    /I"../src" /Fe"FileConverter_msvc.exe" ^
-    /D _CRT_SECURE_NO_DEPRECATE ^
-    /D TIMING ^
-    /O2 /Oi /W2 /EHsc /FAs /Zi /MD /link/opt:ref
+    -I"../src" -o"FileConverter_mingw.exe" ^
+    -D NDEBUG -D TIMING ^
+    --std=c++11 -mssse3 -O3
+
+strip CorrectnessTests_mingw.exe

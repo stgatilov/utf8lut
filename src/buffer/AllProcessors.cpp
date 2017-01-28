@@ -7,7 +7,7 @@
 BaseBufferProcessor* GenerateProcessor(int srcFormat, int dstFormat, int maxBytes, int checkMode, int multiplier, int *errorCounter) {
     #define TRY_PROC(from, to, maxB, mode, mult) \
         if (srcFormat == from && dstFormat == to && maxBytes == maxB && checkMode == mode && multiplier == mult) \
-            res = ProcessorSelector<from, to>::WithOptions<mode, maxB, mult>::Create(errorCounter);
+            res = ProcessorSelector<from, to>::template WithOptions<mode, maxB, mult>::Create(errorCounter);
 
     #define TRY_OPT(from, to, maxB, mode) \
         TRY_PROC(from, to, maxB, mode, 1); \
