@@ -41,6 +41,8 @@ struct ProcessorSelector {
             BufferDecoder<MaxBytes, (DstFormat == dfUtf32 ? 4 : 2), Mode, SpeedMult>,
             BufferEncoder<MaxBytes, (SrcFormat == dfUtf32 ? 4 : 2), Mode, SpeedMult>
         >::Type Processor;
+
+        static Processor* Create(int *errorCounter = 0);
     };
 
     //These functions can be used to BaseBufferProcessor::SetErrorCallback to force conversion of invalid input:
@@ -94,4 +96,13 @@ bool ProcessorSelector<SrcFormat, DstFormat>::OnErrorSetReplacementChars(
         *dstBuffer++ = (char)0x00;
     }
     return true;
+}
+
+template<int SrcFormat, int DstFormat, int Mode, int MaxBytes, int SpeedMult>
+ProcessorSelector<SrcFormat, DstFormat>::WithOptions<Mode, Maxbytes, SpeedMult>::Processor *
+ProcessorSelector<SrcFormat, DstFormat>::WithOptions<Mode, Maxbytes, SpeedMult>::Create(int *errorCounter) {
+    Processor *result = new Processor();
+    if (errorCounter)
+        result->SetErrorCallback(OnErrorSetReplacementChars, errorCounter);
+    return result
 }

@@ -512,7 +512,7 @@ Result SimpleConvert(const Data &data, DataFormat from, DataFormat to, int *maxB
 }
 
 //linked from AllProcessors.cpp
-BaseBufferProcessor *GenerateProcessor(int srcFormat, int dstFormat, int maxBytes, int checkMode, int multiplier);
+BaseBufferProcessor *GenerateProcessor(int srcFormat, int dstFormat, int maxBytes, int checkMode, int multiplier, int *errorCounter = 0);
 
 Result TestedConvert(const Data &data, DataFormat from, DataFormat to, BaseBufferProcessor *processor) {
     long long outMaxSize = ConvertInMemorySize(*processor, data.size());

@@ -4,10 +4,10 @@
 
 #include "Buffer/ProcessorSelector.h"
 
-BaseBufferProcessor* GenerateProcessor(int srcFormat, int dstFormat, int maxBytes, int checkMode, int multiplier) {
+BaseBufferProcessor* GenerateProcessor(int srcFormat, int dstFormat, int maxBytes, int checkMode, int multiplier, int *errorCounter) {
     #define TRY_PROC(from, to, maxB, mode, mult) \
         if (srcFormat == from && dstFormat == to && maxBytes == maxB && checkMode == mode && multiplier == mult) \
-            res = new ProcessorSelector<from, to>::WithOptions<mode, maxB, mult>::Processor();
+            res = ProcessorSelector<from, to>::WithOptions<mode, maxB, mult>::Create(errorCounter);
 
     #define TRY_OPT(from, to, maxB, mode) \
         TRY_PROC(from, to, maxB, mode, 1); \
