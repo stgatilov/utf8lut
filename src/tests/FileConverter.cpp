@@ -366,8 +366,11 @@ int main(int argc, char **argv) {
     logprintf("\n");
 
 #ifdef TIMING
-    logprintf("Internal timings:\n");
-    TimingPrintAll(LOG_FILE);
+    //internal timings are bad in presence of errors
+    if (!(cfg.errorCorrection && errorCounter > 0)) {
+        logprintf("Internal timings:\n");
+        TimingPrintAll(LOG_FILE);
+    }
 #endif
 
     return 0;
