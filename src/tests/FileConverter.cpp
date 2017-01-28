@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <ctype.h>
+#include <time.h>
 #include "Buffer/ProcessorSelector.h"
 #include "Message/MessageConverter.h"
 
@@ -34,6 +35,12 @@ int GetFormatOfEncoding(const char *encoding) {
     Check(false, "Unknown encoding: %s\n", encoding);
     return -1;
 }
+const char *GetFormatStr(int format) {
+    if (format == dfUtf8 ) return "UTF-8 ";
+    if (format == dfUtf16) return "UTF-16";
+    if (format == dfUtf32) return "UTF-32";
+    return 0;
+}
 
 struct Config {
     int srcFormat;              // -s=%s
@@ -49,8 +56,8 @@ struct Config {
     bool dstCheckSum;           // output: [sum]
     
     Config() {
-        srcFormat = 1;
-        dstFormat = 2;
+        srcFormat = dfUtf8;
+        dstFormat = dfUtf16;
         maxBytesFast = 3;
         smallConverter = false;
         errorCorrection = false;
@@ -64,12 +71,30 @@ struct Config {
     void Init() {
         Check(numberOfRuns >= 0, "Cannot run negative number of times: %d\n", numberOfRuns);
         Check(srcFormat != dstFormat, "Source and destination encoding must be different (%d)\n", srcFormat);
-        Check(srcFormat == 1 || dstFormat == 1, "Either source of destination encoding must be UTF-8\n");
+        Check(srcFormat == dfUtf8 || dstFormat == dfUtf8, "Either source of destination encoding must be UTF-8\n");
         Check(!fileToFile || (srcPath[0] && dstPath[0]), "Both input and output must be file paths when using file-to-file mode\n");
         Check(maxBytesFast >= 1 && maxBytesFast <= 3, "Fast path can process up to 1-byte, 2-byte, or 3-byte code points (%d)\n", maxBytesFast);
         Check(!errorCorrection || smallConverter, "Error correction is only supported in 'small' mode\n");
 
-        //TODO: print header to stderr
+        fprintf(stderr, "Starting the following conversion");
+        if (numberOfRuns != 1)
+            fprintf(stderr, " (%d times)", numberOfRuns);
+        fprintf(stderr, ":\n");
+        fprintf(stderr, "  Input (source) in %s: %s\n", GetFormatStr(srcFormat), srcPath);
+        fprintf(stderr, "  Output (dest.) in %s: %s\n", GetFormatStr(dstFormat), dstPath);
+        if (fileToFile) 
+            fprintf(stderr, "  Direct file-to-file conversion\n");
+
+        fprintf(stderr, "Processor settings:\n");
+        fprintf(stderr, "  Fast path supports code points with up to %d bytes in UTF-8\n", maxBytesFast);
+        if (smallConverter)
+            fprintf(stderr, "  Using small converter, i.e. single stream / no unrolling\n");
+        else
+            fprintf(stderr, "  Using big converter, i.e. four streams / 4x unrolling\n");
+        if (errorCorrection)
+            fprintf(stderr, "  Error correction enabled\n");
+        else
+            fprintf(stderr, "  Stops on any incorrect input\n");
     }
 };
 
@@ -165,7 +190,7 @@ int main(int argc, char **argv) {
             fprintf(stderr, "Ignored command line parameter: %s\n", arg);
     }
 
-    Check(posArgsCnt == 2, "Must specify input and output files as two positional arguments");
+    Check(posArgsCnt == 2, "Must specify input and output files as two positional arguments\n");
     cfg.Init();
 
     int errorCounter = 0;
@@ -177,9 +202,11 @@ int main(int argc, char **argv) {
         cfg.smallConverter ? 1 : 4,
         cfg.errorCorrection ? &errorCounter : 0
     );
-    Check(processor, "Cannot generate processor with specified parameters!");
+    Check(processor, "Cannot generate processor with specified parameters!\n");
+    fprintf(stderr, "Generated processor for conversion\n");
 
     ConversionResult allResult;
+    clock_t startTime = clock();
     if (cfg.fileToFile) {
         for (int r = 0; r < cfg.numberOfRuns; r++) {
             ConversionResult convres = ConvertFiles(*processor, cfg.srcPath, cfg.dstPath);
@@ -205,9 +232,15 @@ int main(int argc, char **argv) {
 
         WriteFileContents(cfg.dstPath, outputData, outputSize);
     }
+    clock_t endTime = clock();
+    double elapsedTime = double(endTime - startTime) / CLOCKS_PER_SEC;
+
+    fprintf(stderr, "Task finished in %0.3lf seconds\n", elapsedTime);
+    PrintResult(allResult);
 
     delete processor;
     processor = 0;
+    fprintf(stderr, "Processor destroyed\n");
 
     return 0;
 }
