@@ -124,6 +124,7 @@ BaseBufferProcessor* GenerateProcessor(int srcFormat, int dstFormat, int maxByte
 void ReadFileContents(const char *filename, char *&buffer, long long &size) {
     assert(!buffer);
     FILE *fi = fopen(filename, "rb");
+    Check(fi, "Cannot open file: %s\n", filename);
     fseek(fi, 0, SEEK_END);
     size = ftell(fi);
     fseek(fi, 0, SEEK_SET);
@@ -134,6 +135,7 @@ void ReadFileContents(const char *filename, char *&buffer, long long &size) {
 
 void WriteFileContents(const char *filename, char *buffer, long long size) {
     FILE *fo = fopen(filename, "wb");
+    Check(fo, "Cannot open file: %s\n", filename);
     fwrite(buffer, 1, size, fo);
     fclose(fo);
 }
@@ -301,7 +303,14 @@ int main(int argc, char **argv) {
     else {
         char *inputData = 0;
         long long inputSize = 0;
-        ReadFileContents(cfg.srcPath, inputData, inputSize);
+        if (cfg.srcRandomLen >= 0) {
+            GenerateRandomSource(inputData, inputSize, cfg.srcFormat, cfg.srcRandomLen, cfg.srcRandomChars);
+            logprintf("Generated random input buffer\n");
+        }
+        else {
+            ReadFileContents(cfg.srcPath, inputData, inputSize);
+            logprintf("Read input buffer from file\n");
+        }
 
         char *outputData = 0;
         long long outputSize = ConvertInMemorySize(*processor, inputSize, &outputData);
@@ -312,18 +321,24 @@ int main(int argc, char **argv) {
                 logprintf("Consecutive conversion runs produce different results!\n");
             allResult = convres;
         }
+        logprintf("Conversion%s complete\n", (cfg.numberOfRuns == 1 ? "" : " (all runs)"));
 
         if (cfg.dstPrintHash) {
             unsigned int hash = GetHashOfBuffer(outputData, outputSize);
             logprintf("Computed hash value of output: %08X\n", hash);
         }
-        else
+        else {
             WriteFileContents(cfg.dstPath, outputData, outputSize);
+            logprintf("Wrote output buffer to file\n");
+        }
+
+        delete[] inputData;
+        delete[] outputData;
     }
     clock_t endTime = clock();
     double elapsedTime = double(endTime - startTime) / CLOCKS_PER_SEC;
 
-    logprintf("Task finished in %0.3lf seconds\n", elapsedTime);
+    logprintf("The task was finished in %0.3lf seconds\n", elapsedTime);
     PrintResult(allResult);
 
     delete processor;
