@@ -78,4 +78,4 @@ struct ConvertFilesSettings {
     ConvertFilesSettings() : type(ftLibC)/*, bufferSize(0)*/ {}
 };
 
-ConversionResult ConvertFiles(BaseBufferProcessor &processor, const char *inputFilePath, const char *outputFilePath, ConvertFilesSettings settings = ConvertFilesSettings());
+ConversionResult ConvertFile(BaseBufferProcessor &processor, const char *inputFilePath, const char *outputFilePath, ConvertFilesSettings settings = ConvertFilesSettings());

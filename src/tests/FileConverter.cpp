@@ -305,7 +305,7 @@ int main(int argc, char **argv) {
     clock_t startTime = clock();
     if (cfg.fileToFile) {
         for (int r = 0; r < cfg.numberOfRuns; r++) {
-            ConversionResult convres = ConvertFiles(*processor, cfg.srcPath, cfg.dstPath);
+            ConversionResult convres = ConvertFile(*processor, cfg.srcPath, cfg.dstPath);
             if (r && !IsSameResult(allResult, convres))
                 logprintf("Consecutive conversion runs produce different results!\n");
             allResult = convres;

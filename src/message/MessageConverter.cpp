@@ -63,7 +63,7 @@ long long ConvertInMemorySize(BaseBufferProcessor &processor, long long inputSiz
 }
 
 
-ConversionResult ConvertFiles(BaseBufferProcessor &processor, const char *inputFilePath, const char *outputFilePath, ConvertFilesSettings settings) {
+ConversionResult ConvertFile(BaseBufferProcessor &processor, const char *inputFilePath, const char *outputFilePath, ConvertFilesSettings settings) {
     ConversionResult result;
     result.status = (ConversionStatus)-1;
     result.inputSize = 0;
@@ -103,14 +103,7 @@ ConversionResult ConvertFiles(BaseBufferProcessor &processor, const char *inputF
         //do all the work
         bool ok = processor.Process();
 
-        //check if hard error occurred
-        if (!ok) {
-            result.status = csIncorrectData;
-            //TODO: copy converted bytes?
-            break;
-        }
-
-        //TODO: We should not copy everything for 4 streams...
+        //write all the properly converted data to output
         for (int k = 0; k < streamsCnt; k++) {
             //get output bytes
             const char *outputBuffer;
@@ -119,11 +112,16 @@ ConversionResult ConvertFiles(BaseBufferProcessor &processor, const char *inputF
             //write them to file
             fwrite(outputBuffer, 1, outSize, fout);
         }
+
+        //check if hard error occurred
+        if (!ok) {
+            result.status = csIncorrectData;
+            break;
+        }
     }
 
-    /*//TODO: set sizes of converted input/output
     result.inputSize = input.GetProcessedInputSize();
-    result.outputSize = output.GetFilledOutputSize();*/
+    result.outputSize = output.GetFilledOutputSize();
 
     if (result.status == csIncorrectData) {
         //hard error happened in the loop

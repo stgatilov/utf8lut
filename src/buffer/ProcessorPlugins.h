@@ -66,12 +66,14 @@ class InteractiveInput : public InputPlugin {
     int inputSize;
     int inputSet;
     bool lastBlock;
+    long long totalSizeDone;
 
 public:
     InteractiveInput(BaseBufferProcessor &owner) : processor(&owner) {
         inputSize = processor->GetInputBufferRecommendedSize();
         inputBuffer = new char[inputSize];
         inputSet = 0;
+        totalSizeDone = 0;
         processor->AddPlugin(*this);
     }
     ~InteractiveInput() {
@@ -95,9 +97,13 @@ public:
         if (remains > 0)
             memmove(inputBuffer, inputBuffer + inputDone, remains);
         inputSet = remains;
+        totalSizeDone += inputDone;
     }
     int GetRemainingDataSize() const {
         return inputSet;
+    }
+    long long GetProcessedInputSize() const {
+        return totalSizeDone;
     }
 };
 
@@ -170,6 +176,7 @@ class InteractiveOutput : public OutputPlugin {
     BaseBufferProcessor *processor;
     int streamsCnt, streamOutputSize;
     char *multiBuffer[BaseBufferProcessor::MaxStreamsCount];
+    long long totalSizeDone;
 
 public:
     InteractiveOutput(BaseBufferProcessor &owner) : processor(&owner) {
@@ -177,6 +184,7 @@ public:
         streamOutputSize = (int)processor->GetOutputBufferMinSize(processor->GetInputBufferRecommendedSize());
         for (int i = 0; i < streamsCnt; i++)
             multiBuffer[i] = new char[streamOutputSize];
+        totalSizeDone = 0;
         processor->AddPlugin(*this);
     }
     ~InteractiveOutput() {
@@ -187,11 +195,18 @@ public:
         for (int i = 0; i < streamsCnt; i++)
             processor->SetOutputBuffer(multiBuffer[i], streamOutputSize, i);
     }
+    virtual void Post() {
+        for (int i = 0; i < streamsCnt; i++)
+            totalSizeDone += processor->GetOutputDoneSize(i);
+    }
     int GetStreamsCount() const {
         return streamsCnt;
     }
     void GetBuffer(const char *&buffer, int &size, int index = 0) const {
         buffer = multiBuffer[index];
         size = processor->GetOutputDoneSize(index);
+    }
+    long long GetFilledOutputSize() const {
+        return totalSizeDone;
     }
 };
