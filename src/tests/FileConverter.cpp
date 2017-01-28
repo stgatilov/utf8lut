@@ -60,7 +60,7 @@ struct Config {
     char srcPath[MAX_ARG_LEN];
     char dstPath[MAX_ARG_LEN];
     int srcRandomMask;          // input: [rnd%c%c%c%c]
-    bool dstCheckSum;           // output: [sum]
+    bool dstPrintHash;          // output: [hash]
     
     Config() {
         srcFormat = dfUtf8;
@@ -73,7 +73,7 @@ struct Config {
         srcPath[0] = 0;
         dstPath[0] = 0;
         srcRandomMask = -1;
-        dstCheckSum = false;
+        dstPrintHash = false;
     }
     void Init() {
         Check(numberOfRuns >= 0, "Cannot run negative number of times: %d\n", numberOfRuns);
@@ -91,7 +91,7 @@ struct Config {
             logprintf(" (%d times)", numberOfRuns);
         logprintf(":\n");
         logprintf("  Input (source) in %s: %s\n", GetFormatStr(srcFormat), srcPath);
-        logprintf("  Output (dest.) in %s: %s\n", GetFormatStr(dstFormat), dstPath);
+        logprintf("  Output (dest.) in %s: %s\n", GetFormatStr(dstFormat), (dstPrintHash ? "[print hash]" : dstPath));
         if (fileToFile) 
             logprintf("  Direct file-to-file conversion\n");
 
@@ -144,6 +144,12 @@ void PrintResult(const ConversionResult &res) {
         res.inputSize, res.outputSize
     );
 }
+unsigned int GetHashOfBuffer(const char *buffer, long long size) {
+    unsigned int hash = 0;
+    for (long long i = 0; i < size; i++)
+        hash = hash * 31 + buffer[i];
+    return hash;
+}
 
 
 int main(int argc, char **argv) {
@@ -189,8 +195,8 @@ int main(int argc, char **argv) {
                 strcpy(cfg.srcPath, arg);
             }
             if (1 == posArgsCnt) {
-                if (strcmp(larg, "[sum]") == 0)
-                    cfg.dstCheckSum = true;
+                if (strcmp(larg, "[hash]") == 0)
+                    cfg.dstPrintHash = true;
                 else
                     strcpy(cfg.dstPath, arg);
             }
@@ -241,7 +247,12 @@ int main(int argc, char **argv) {
             allResult = convres;
         }
 
-        WriteFileContents(cfg.dstPath, outputData, outputSize);
+        if (cfg.dstPrintHash) {
+            unsigned int hash = GetHashOfBuffer(outputData, outputSize);
+            logprintf("Computed hash value of output: %08X\n", hash);
+        }
+        else
+            WriteFileContents(cfg.dstPath, outputData, outputSize);
     }
     clock_t endTime = clock();
     double elapsedTime = double(endTime - startTime) / CLOCKS_PER_SEC;
