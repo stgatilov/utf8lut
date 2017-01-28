@@ -335,7 +335,7 @@ int main(int argc, char **argv) {
         logprintf("Conversion%s complete\n", (cfg.numberOfRuns == 1 ? "" : " (all runs)"));
 
         if (cfg.dstPrintHash) {
-            unsigned int hash = GetHashOfBuffer(outputData, outputSize);
+            unsigned int hash = GetHashOfBuffer(outputData, allResult.outputSize);
             logprintf("Computed hash value of output: %08X\n", hash);
         }
         else {
