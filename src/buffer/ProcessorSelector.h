@@ -98,11 +98,12 @@ bool ProcessorSelector<SrcFormat, DstFormat>::OnErrorSetReplacementChars(
     return true;
 }
 
-template<int SrcFormat, int DstFormat, int Mode, int MaxBytes, int SpeedMult>
-ProcessorSelector<SrcFormat, DstFormat>::WithOptions<Mode, Maxbytes, SpeedMult>::Processor *
-ProcessorSelector<SrcFormat, DstFormat>::WithOptions<Mode, Maxbytes, SpeedMult>::Create(int *errorCounter) {
+template<int SrcFormat, int DstFormat>
+template<int Mode, int MaxBytes, int SpeedMult>
+typename ProcessorSelector<SrcFormat, DstFormat>::WithOptions<Mode, MaxBytes, SpeedMult>::Processor *
+ProcessorSelector<SrcFormat, DstFormat>::WithOptions<Mode, MaxBytes, SpeedMult>::Create(int *errorCounter) {
     Processor *result = new Processor();
     if (errorCounter)
         result->SetErrorCallback(OnErrorSetReplacementChars, errorCounter);
-    return result
+    return result;
 }

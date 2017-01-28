@@ -9,6 +9,7 @@
 
 #ifdef _MSC_VER
     #define PRIu64 "I64u"
+    #define PRId64 "I64d"
 #else
     #define __STDC_FORMAT_MACROS 1
     #include <inttypes.h>
