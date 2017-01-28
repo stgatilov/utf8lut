@@ -11,4 +11,4 @@ g++ ^
     -D NDEBUG -D TIMING ^
     --std=c++11 -mssse3 -O3
 
-strip CorrectnessTests_mingw.exe
+strip FileConverter_mingw.exe
