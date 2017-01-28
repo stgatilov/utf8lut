@@ -299,7 +299,7 @@ int main(int argc, char **argv) {
         cfg.errorCorrection ? &errorCounter : 0
     );
     Check(processor, "Cannot generate processor with specified parameters!\n");
-    logprintf("Generated processor for conversion\n");
+    //logprintf("Generated processor for conversion\n");
 
     ConversionResult allResult;
     clock_t startTime = clock();
@@ -345,6 +345,7 @@ int main(int argc, char **argv) {
 
         delete[] inputData;
         delete[] outputData;
+        logprintf("\n");
     }
     clock_t endTime = clock();
     double elapsedTime = double(endTime - startTime) / CLOCKS_PER_SEC;
@@ -360,7 +361,7 @@ int main(int argc, char **argv) {
 
     delete processor;
     processor = 0;
-    logprintf("Destroyed processor\n");
+    //logprintf("Destroyed processor\n");
 
     logprintf("\n");
 
