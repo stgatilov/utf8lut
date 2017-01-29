@@ -26,7 +26,7 @@ enum ConversionMode {
 };
 
 //This selector can be used to get type of processor by options, e.g.:
-//  typedef ProcessorSelector<0, 1>::WithOptions<cmValidate, 2>::Processor MyProcessor;
+//  typedef typename ProcessorSelector<0, 1>::template WithOptions<cmValidate, 2>::Processor MyProcessor;
 //  BaseBufferProcessor *processor = new MyProcessor();
 //TODO: more explanations, all options, what about error handlers?
 template<int SrcFormat, int DstFormat>
