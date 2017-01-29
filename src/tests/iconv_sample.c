@@ -95,13 +95,16 @@ load_from_utf8_file (int fd, char *outbuf, size_t avail)
   return wrptr - outbuf;
 }
 
-#define INPUT_FILE "data_utf8.txt"
+#define DEFAULT_INPUT_FILE "data_utf8.txt"
 
-int main() {
-  int fd = open(INPUT_FILE, O_RDONLY, 0xDEADBEEF);
+int main(int argc, char **argv) {
+  const char *filename = DEFAULT_INPUT_FILE;
+  if (argc >= 2)
+    filename = argv[1];
+  int fd = open(filename, O_RDONLY, 0xDEADBEEF);
   if (fd == -1) {
     perror("open");
-    fprintf(stderr, "Most likely input file \"" INPUT_FILE "\" is missing.\n");
+    fprintf(stderr, "Most likely input file \"%s\" is missing.\n", filename);
     return 1;
   }
 
