@@ -6,6 +6,11 @@
 #include <time.h>
 #include "iconv/iconv.h"
 
+//note: this flag is required on Windows, but unknown on real posix systems
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
+
 //note: the default MSVC value 512 is inefficient today
 #define BUFSIZ (1<<18)
 
@@ -101,7 +106,7 @@ int main(int argc, char **argv) {
   const char *filename = DEFAULT_INPUT_FILE;
   if (argc >= 2)
     filename = argv[1];
-  int fd = open(filename, O_RDONLY, 0xDEADBEEF);
+  int fd = open(filename, O_RDONLY | O_BINARY);
   if (fd == -1) {
     perror("open");
     fprintf(stderr, "Most likely input file \"%s\" is missing.\n", filename);
@@ -126,10 +131,28 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Conversion finished successfully.\n");
   else
     fprintf(stderr, "Error happened during conversion.\n");
+  close(fd);
 
   unsigned int hash = 0;
   for (int i = 0; i < convsize; i++)
     hash = hash * 31 + outbuf[i];
   fprintf(stderr, "Converted data: size = %d, base-31 poly hash = %08X\n", convsize, hash);
+
+  if (argc >= 3) {
+    filename = argv[2];
+    int fd = open(filename, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644);
+    if (fd == -1) {
+      perror("open");
+      fprintf(stderr, "Cannot open file \"%s\" for writing.\n", filename);
+      return 2;
+    }
+    int wrk = write(fd, outbuf, convsize);
+    if (wrk == -1 || wrk < convsize)
+      perror("write");
+    close(fd);
+  }
+
+  free(outbuf);
+
   return 0;
 }
