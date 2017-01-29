@@ -6,4 +6,4 @@ cl ^
     /D _CRT_SECURE_NO_DEPRECATE ^
     /O2 /W2 /EHsc /Zi /MD
 
-copy ..\data\chinese_book.txt data_utf8.txt
+copy ..\data\test_minimal.txt data_utf8.txt
