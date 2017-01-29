@@ -22,27 +22,28 @@ extern "C" {
 #endif
 
     // see manual at http://man7.org/linux/man-pages/man3/iconv_open.3.html
-    // Supported conversion modes are: from UTF-8 to (UTF-16LE or UTF-32LE) and vice versa.
+    // Supported conversion modes are: from "UTF-8" to ("UTF-16LE" or "UTF-32LE") and vice versa.
     //
     ICONV_UTF8LUT_EXPORT iconv_t iconv_open(const char *tocode, const char *fromcode);
 
     // see manual at http://man7.org/linux/man-pages/man3/iconv.3.html
     //
     // Breaking differences from the official iconv interface are:
-    //  1. If input is fully converted without errors, then just "1" is returned (instead of number of chars converted).
-    //  2. If output buffer is not big enough to hold converted data for any valid input of size *inbytesleft,
+    //  1. If input is fully converted without errors, then just "1" is returned
+    //     (instead of the total number of characters converted).
+    //  2. If output buffer is not big enough to hold converted data for any valid input of size *inbytesleft (plus overhead),
     //     then E2BIG verdict may be returned with considerable amount of input data left unprocessed (usually up to 64KB)
-    //     (original interface guarantees that maximal possible number of input charactars is processed).
-    //  3. If input data is invalid, then conversion may stop many characters before the problematic place (usually up to 64KB).
-    //     It means that currently the library detects errors correctly, but cannot point you to exact position of the first error.
+    //     (while original interface guarantees that maximal possible number of input characters is processed).
+    //     In order to avoid this problem, allocate sufficiently large output buffer (see also p.3 below).
     //
     // Interface extension:
-    //  4. If inbuf and *inbuf are NOT null, and either outbuf or *outbuf is null, then:
-    //     maximal possible size of converted output for input data of size *inbytesleft is stored into *outbytesleft.
-    //     Note that inbuf parameter is NOT used in this case.
+    //  3. If inbuf and *inbuf are NOT null, and either outbuf or *outbuf is null, then:
+    //     maximal possible size of converted output (plus overhead) for input data of size *inbytesleft is stored into *outbytesleft.
+    //     If you start conversion with the same value of *inbytesleft, and such a value of *outbytesleft (or greater),
+    //     then the verdict E2BIG will surely NOT happen.
+    //     Note: inbuf parameter is NOT used in this case, and no actual conversion happens.
     //
-    // In order to avoid E2BIG verdict due to point 2, you should make sure that output buffer is large enough.
-    // This can be easily achieved using point 4:
+    // Here is a code sample showing how to allocate output buffer, so that E2BIG verdict does NOT happen (see p.2 and p.3):
     //     size_t inbufsize = {...}, outbufsize;
     //     char *outbuf = (char*)0xDEADBEEF;
     //     iconv(
