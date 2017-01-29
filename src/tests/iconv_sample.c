@@ -116,7 +116,7 @@ int main(int argc, char **argv) {
   struct stat stats;
   fstat(fd, &stats);
 
-  size_t outsize = stats.st_size * 2 + 16;
+  size_t outsize = stats.st_size * 2 + 32;
   char *outbuf = (char*)malloc(outsize);
 
   int startclock = clock();
