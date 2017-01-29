@@ -6,7 +6,7 @@
 #include <time.h>
 #include "iconv/iconv.h"
 
-//note: the default MSVC value 512 is inefficent today
+//note: the default MSVC value 512 is inefficient today
 #define BUFSIZ (1<<18)
 
 //sample taken from https://www.gnu.org/software/libc/manual/html_node/iconv-Examples.html
@@ -124,9 +124,9 @@ int main() {
   else
     fprintf(stderr, "Error happened during conversion.\n");
 
-  unsigned char xorsum = 0;
+  unsigned int hash = 0;
   for (int i = 0; i < convsize; i++)
-    xorsum ^= outbuf[i];
-  fprintf(stderr, "Converted data: size = %d, xor-8 checksum = %d\n", convsize, (int)xorsum);
+    hash = hash * 31 + outbuf[i];
+  fprintf(stderr, "Converted data: size = %d, base-31 poly hash = %08X\n", convsize, hash);
   return 0;
 }
