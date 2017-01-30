@@ -1,6 +1,6 @@
-//Note: this source file contains instantiations of all possible processors.
-//You should NOT link it in your project.
-//It is used mostly for testing purposes.
+// Note: this source file contains instantiations of all possible processors.
+// You should NOT link it in your project.
+// It is used mostly for testing purposes.
 
 #include "Buffer/ProcessorSelector.h"
 
