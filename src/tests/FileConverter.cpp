@@ -224,7 +224,66 @@ unsigned int GetHashOfBuffer(const char *buffer, long long size) {
 }
 
 
+void PrintHelp() {
+    logprintf(
+        "Small converter tool intended for demonstration and benchmarking of utf8lut.\n"
+        "\n"
+        "Usage:\n"
+        "   FileConverter  <input_file_path>  <output_file_path>   {options}\n"
+        "\n"
+        "Setting direction of conversion:\n"
+        "   -s=utf8 | -s=utf16 | -s=utf32\n"
+        "       Sets encoding of the input.\n"
+        "       Default: -s=utf8\n"
+        "   -d=utf8 | -d=utf16 | -d=utf32\n"
+        "       Sets desired encoding of the output.\n"
+        "       Default: -d=utf16\n"
+        "\n"
+        "External settings (of FileConverter):\n"
+        "   --file\n"
+        "       Perform file-to-file streaming conversion with fixed-size memory buffer.\n"
+        "       This key is NOT set by default, and without it conversion consists of three separate steps:\n"
+        "       reading the whole input file into memory, mem-to-mem conversion, writing the whole output file.\n"
+        "   -k=%%d\n"
+        "       Perform the conversion <%%d> times in a row.\n"
+        "       Usually reading and writing files is NOT repeated, but in file-to-file mode it is.\n"
+        "       Default: -k=1\n"
+        "   -ec\n"
+        "       Enable error conversion which turns problematic code units into 0xFFFD repl. code points.\n"
+        "       By default converter simply stops on the first error (given that validation is enabled).\n"
+        "\n"
+        "Internal settings of used processor:\n"
+        "   -b=%%d      (-b=1 | -b=2 | -b=3)\n"
+        "       The fast code path must support all code points which consist of at most <%%d> bytes in UTF-8.\n"
+        "       Default: -b=3      (fast path supports the whole BMP)\n"
+        "   -m=%%d      (-m=0 | -m=1 | -m=2)\n"
+        "       Sets checking mode of processor, which defines slow path and validation.\n"
+        "       -m=0:  cmFast      (only fast path, converts limited set of code points)\n"        
+        "       -m=1:  cmFull      (fast + slow path, converts any correct input)\n"
+        "       -m=2:  cmValidate  (any input allowed, includes validation)\n" 
+        "       Default: -m=2  (cmValidate)\n"
+        "   --small\n"
+        "       Disables performance tweak, i.e. sets SpeedMult argument = 1.\n"
+        "       This in turn disables multi-stream processor and manual loop unrolling.\n"
+        "       By default the key is NOT set, so the faster version of processor is used.\n"
+        "\n"
+        "Alternatives for positional arguments:\n"
+        "   <input_file_path>:   [rndXYZW:%%d]    (with brackets)\n"
+        "       Generate random input data instead of reading it from a file.\n"
+        "       You must set digits 0 or 1 instead of letters <X>, <Y>, <Z>, <W>.\n"
+        "       Each of them forbids or allows code points of corresponding byte size in UTF-8.\n"
+        "       The number <%%d> after semicolon sets how many code points are there in the input.\n"
+        "       Note that generation is quite slow, and random tests are very different from the real ones.\n"
+        "   <output_file_path>:  [hash]     (with brackets)\n"
+        "       Calculate hash of the output data instead of writing it to a file.\n"
+        "       Polynomial hash with base 31 modulo 2^32 is printed to log.\n"
+    );
+    exit(1);
+}
+
 int main(int argc, char **argv) {
+    if (argc == 1)
+        PrintHelp();
     Config cfg;
 
     int posArgsCnt = 0;
@@ -240,12 +299,8 @@ int main(int argc, char **argv) {
         char str[MAX_ARG_LEN];
 
         if (0);
-        else if (strcmp(larg, "-h") == 0 || strcmp(larg, "--help") == 0) {
-            logprintf(
-                "TODO!\n"
-            );
-            exit(1);
-        }
+        else if (strcmp(larg, "-h") == 0 || strcmp(larg, "--help") == 0)
+            PrintHelp();
         else if (sscanf(larg, "-s=%s", &str) == 1)
             cfg.srcFormat = GetFormatOfEncoding(str);
         else if (sscanf(larg, "-d=%s", &str) == 1)
