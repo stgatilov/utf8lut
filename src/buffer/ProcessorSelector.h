@@ -101,18 +101,23 @@ struct ProcessorSelector {
 
     template<int Mode = cmValidate, int MaxBytes = 3, int SpeedMult = 1>
     struct WithOptions {
+        // Type of corresponding processor, can be created as "new ...::Processor();"
         typedef typename TernaryOperator<SrcFormat == dfUtf8,
             BufferDecoder<MaxBytes, (DstFormat == dfUtf32 ? 4 : 2), Mode, SpeedMult>,
             BufferEncoder<MaxBytes, (SrcFormat == dfUtf32 ? 4 : 2), Mode, SpeedMult>
         >::Type Processor;
 
+        // A helper for creating processor with error correction or without it.
+        // In any case: a new processor is created and returned.
+        // If errorCounter is not null, then error correction is additionally enabled:
+        // OnErrorSetReplacementChars callback is installed, and number of fixed errors is maintained in *errorCounter.
         static Processor* Create(int *errorCounter = 0);
     };
 
-    //These functions can be used to BaseBufferProcessor::SetErrorCallback to force conversion of invalid input:
-    //  code units are simply skipped until conversion can be continued
+    // Some ready-to-use callbacks which can be installed for error correction (use BaseBufferProcessor::SetErrorCallback).
+    //   code units are simply skipped until conversion can be continued
     static bool OnErrorMissCodeUnits(void *context, const char *&srcBuffer, int srcBytes, char *&dstBuffer, int dstBytes);
-    //  code units are replaced with 0xFFFD code points until conversion can be continued
+    //   code units are replaced with 0xFFFD code points until conversion can be continued
     static bool OnErrorSetReplacementChars(void *context, const char *&srcBuffer, int srcBytes, char *&dstBuffer, int dstBytes);
 };
 
@@ -128,9 +133,11 @@ template<int SrcFormat, int DstFormat>
 bool ProcessorSelector<SrcFormat, DstFormat>::OnErrorMissCodeUnits(
     void *context, const char *&srcBuffer, int srcBytes, char *&dstBuffer, int dstBytes
 ) {
-    int &counter = *(int*)context;
     srcBuffer += GetUnitSizeOfFormat(SrcFormat);
-    counter++;
+    if (context) {
+        int &counter = *(int*)context;
+        counter++;
+    }
     return true;
 }
 
@@ -138,9 +145,6 @@ template<int SrcFormat, int DstFormat>
 bool ProcessorSelector<SrcFormat, DstFormat>::OnErrorSetReplacementChars(
     void *context, const char *&srcBuffer, int srcBytes, char *&dstBuffer, int dstBytes
 ) {
-    int &counter = *(int*)context;
-    srcBuffer += GetUnitSizeOfFormat(SrcFormat);
-    counter++;
     if (DstFormat == dfUtf8) {
         if (dstBytes < 3) return false;
         *dstBuffer++ = (char)0xEF;
@@ -158,6 +162,11 @@ bool ProcessorSelector<SrcFormat, DstFormat>::OnErrorSetReplacementChars(
         *dstBuffer++ = (char)0xFF;
         *dstBuffer++ = (char)0x00;
         *dstBuffer++ = (char)0x00;
+    }
+    srcBuffer += GetUnitSizeOfFormat(SrcFormat);
+    if (context) {
+        int &counter = *(int*)context;
+        counter++;
     }
     return true;
 }
