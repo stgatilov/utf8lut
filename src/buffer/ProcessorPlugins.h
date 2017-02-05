@@ -34,7 +34,7 @@ public:
         int bytes = GetNextChunkSize();
         processor->SetInputBuffer(srcBuffer + srcDone, bytes);
         finished = (srcDone + bytes == srcSize);
-        processor->SetMode(finished);
+        processor->SetHint(finished);
     }
     virtual void Post() {
         srcDone += processor->GetInputDoneSize();
@@ -89,7 +89,7 @@ public:
     }
     virtual void Pre() {
         processor->SetInputBuffer(inputBuffer, inputSet);
-        processor->SetMode(lastBlock);
+        processor->SetHint(lastBlock);
     }
     virtual void Post() {
         int inputDone = processor->GetInputDoneSize();

@@ -19,7 +19,7 @@ void BaseBufferProcessor::Clear() {
     memset(outputSize, 0, sizeof(outputSize));
     inputDone = 0;
     memset(outputDone, 0, sizeof(outputDone));
-    SetMode();
+    SetHint();
     pluginsCount = 0;
 }
 
@@ -61,7 +61,7 @@ int BaseBufferProcessor::GetBufferMaxSize() const {
     return INT_MAX / 8;
 }
 
-void BaseBufferProcessor::SetMode(bool isLastBlock) {
+void BaseBufferProcessor::SetHint(bool isLastBlock) {
     lastBlockMode = isLastBlock;
 }
 
