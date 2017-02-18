@@ -155,7 +155,11 @@ int MaxCodeOf(int bytes) {
     if (bytes == 3) return 0x0000FFFF;
     return 0x10FFFF;
 }
-int MyRandom() { return (rand() << 15) ^ rand(); }
+int MyRandom() {
+    return RAND_MAX+1 == (1<<15)
+        ? ((rand() << 15) ^ rand())
+        : (rand() & ((1<<30)-1));
+}
 void GenerateRandomSource(char *&buffer, long long &size, int format, int cnt, bool allowedLens[4]) {
     assert(!buffer);
     srand(0); rand(); rand();
