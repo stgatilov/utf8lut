@@ -1,7 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
+#ifdef _WIN32
 #include <io.h>
+#else
+#include <sys/io.h>
+#endif
 #include <sys/stat.h>
 #include <time.h>
 #include "iconv/iconv.h"
