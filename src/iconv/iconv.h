@@ -12,6 +12,8 @@
     #define ICONV_UTF8LUT_EXPORT __attribute__ ((visibility ("default")))
 #endif
 
+#include <stddef.h>
+
 //global var "errno" used to report errors
 #include <errno.h>
 //any valid iconv_t descriptor is actually a pointer to BaseBufferProcessor object
