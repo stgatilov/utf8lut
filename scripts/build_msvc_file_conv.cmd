@@ -1,12 +1,12 @@
 set ROOT=../src/
 cl ^
-    %ROOT%Base/Timing.cpp ^
-    %ROOT%Core/DecoderLut.cpp ^
-    %ROOT%Core/EncoderLut.cpp ^
-    %ROOT%Buffer/BaseBufferProcessor.cpp ^
-    %ROOT%Buffer/AllProcessors.cpp ^
-    %ROOT%Message/MessageConverter.cpp ^
-    %ROOT%Tests/FileConverter.cpp ^
+    %ROOT%base/Timing.cpp ^
+    %ROOT%core/DecoderLut.cpp ^
+    %ROOT%core/EncoderLut.cpp ^
+    %ROOT%buffer/BaseBufferProcessor.cpp ^
+    %ROOT%buffer/AllProcessors.cpp ^
+    %ROOT%message/MessageConverter.cpp ^
+    %ROOT%tests/FileConverter.cpp ^
     /I"../src" /Fe"FileConverter_msvc.exe" ^
     /D _CRT_SECURE_NO_DEPRECATE ^
     /D NDEBUG /D TIMING ^

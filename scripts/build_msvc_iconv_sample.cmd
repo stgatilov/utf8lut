@@ -1,6 +1,6 @@
 set ROOT=../src/
 cl ^
-    %ROOT%Tests/iconv_sample.c ^
+    %ROOT%tests/iconv_sample.c ^
     iconv_u8l_msvc.lib ^
     /I"../src" /Fe"iconv_sample_msvc.exe" ^
     /D _CRT_SECURE_NO_DEPRECATE ^

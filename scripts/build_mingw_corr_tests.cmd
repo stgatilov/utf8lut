@@ -1,11 +1,11 @@
 set ROOT=../src/
 g++ ^
-    %ROOT%Core/DecoderLut.cpp ^
-    %ROOT%Core/EncoderLut.cpp ^
-    %ROOT%Buffer/BaseBufferProcessor.cpp ^
-    %ROOT%Buffer/AllProcessors.cpp ^
-    %ROOT%Message/MessageConverter.cpp ^
-    %ROOT%Tests/CorrectnessTests.cpp ^
+    %ROOT%core/DecoderLut.cpp ^
+    %ROOT%core/EncoderLut.cpp ^
+    %ROOT%buffer/BaseBufferProcessor.cpp ^
+    %ROOT%buffer/AllProcessors.cpp ^
+    %ROOT%message/MessageConverter.cpp ^
+    %ROOT%tests/CorrectnessTests.cpp ^
     -I"../src" -o"CorrectnessTests_mingw.exe" ^
     --std=c++11 -mssse3 -O3
 

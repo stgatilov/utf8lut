@@ -1,6 +1,6 @@
 set ROOT=../src/
 g++ ^
-    %ROOT%Tests/iconv_sample.c ^
+    %ROOT%tests/iconv_sample.c ^
     iconv_u8l_mingw.dll ^
     -I"../src" -o"iconv_sample_mingw.exe" ^
     --std=c++11 -mssse3 -O3
