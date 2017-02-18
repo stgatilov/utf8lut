@@ -2,12 +2,12 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include "Base/PerfDefs.h"
-#include "Core/EncoderLut.h"
-#include "Core/EncoderProcess.h"
-#include "Core/ProcessTrivial.h"
-#include "Base/Timing.h"
-#include "Buffer/BaseBufferProcessor.h"
+#include "base/PerfDefs.h"
+#include "core/EncoderLut.h"
+#include "core/EncoderProcess.h"
+#include "core/ProcessTrivial.h"
+#include "base/Timing.h"
+#include "buffer/BaseBufferProcessor.h"
 
 /**params:
  * MaxBytes = 1, 2, 3

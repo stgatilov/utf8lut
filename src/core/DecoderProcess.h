@@ -2,8 +2,8 @@
 
 #include <stdint.h>
 #include <tmmintrin.h>
-#include "Base/PerfDefs.h"
-#include "Core/DecoderLut.h"
+#include "base/PerfDefs.h"
+#include "core/DecoderLut.h"
 
 /** template params:
  * MaxBytes = 1, 2, 3

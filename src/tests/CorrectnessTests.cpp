@@ -8,8 +8,8 @@
 #include <memory>
 #include <algorithm>
 
-#include "Message/MessageConverter.h"
-#include "Buffer/ProcessorSelector.h"
+#include "message/MessageConverter.h"
+#include "buffer/ProcessorSelector.h"
 
 
 #define RND std::mt19937

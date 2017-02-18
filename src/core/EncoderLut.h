@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <emmintrin.h>
-#include "Base/PerfDefs.h"
+#include "base/PerfDefs.h"
 
 //a single entry of each LUT is defined
 struct EncoderLutEntry {

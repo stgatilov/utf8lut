@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Buffer/BaseBufferProcessor.h"
-#include "Buffer/ProcessorPlugins.h"
+#include "buffer/BaseBufferProcessor.h"
+#include "buffer/ProcessorPlugins.h"
 
 
 enum ConversionStatus {

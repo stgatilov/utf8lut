@@ -1,4 +1,4 @@
-#include "Core/EncoderLut.h"
+#include "core/EncoderLut.h"
 #include <assert.h>
 #include <string.h>
 

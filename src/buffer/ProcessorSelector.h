@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Buffer/BufferDecoder.h"
-#include "Buffer/BufferEncoder.h"
+#include "buffer/BufferDecoder.h"
+#include "buffer/BufferEncoder.h"
 
 //(metaprogramming helper equivalent to std::conditional)
 template<bool Condition, class First, class Second> struct TernaryOperator {};

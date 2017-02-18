@@ -3,9 +3,9 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <time.h>
-#include "Buffer/ProcessorSelector.h"
-#include "Message/MessageConverter.h"
-#include "Core/ProcessTrivial.h"    //only for random inputs
+#include "buffer/ProcessorSelector.h"
+#include "message/MessageConverter.h"
+#include "core/ProcessTrivial.h"    //only for random inputs
 
 const int MAX_POS_ARGS = 2;
 const int MAX_ARG_LEN = 1<<12;

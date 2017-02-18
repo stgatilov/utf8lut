@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 #include <emmintrin.h>
-#include "Base/PerfDefs.h"
+#include "base/PerfDefs.h"
 
 struct DecoderCoreInfo {
     __m128i shufAB;                     //shuffling mask to get lower two bytes of symbols

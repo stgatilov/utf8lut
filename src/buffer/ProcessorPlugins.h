@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Buffer/BaseBufferProcessor.h"
+#include "buffer/BaseBufferProcessor.h"
 
 // Base class for all plugins (they can be attached to BaseBufferProcessor).
 class BasePlugin {

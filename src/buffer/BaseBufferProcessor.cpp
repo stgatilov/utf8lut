@@ -1,5 +1,5 @@
-#include "Buffer/BaseBufferProcessor.h"
-#include "Buffer/ProcessorPlugins.h"
+#include "buffer/BaseBufferProcessor.h"
+#include "buffer/ProcessorPlugins.h"
 #include <string.h>
 #include <assert.h>
 #include <limits.h>

@@ -2,7 +2,7 @@
 // You should NOT link it in your project.
 // It is used mostly for testing purposes.
 
-#include "Buffer/ProcessorSelector.h"
+#include "buffer/ProcessorSelector.h"
 
 BaseBufferProcessor* GenerateProcessor(int srcFormat, int dstFormat, int maxBytes, int checkMode, int multiplier, int *errorCounter) {
     #define TRY_PROC(from, to, maxB, mode, mult) \

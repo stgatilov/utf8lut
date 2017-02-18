@@ -1,4 +1,4 @@
-#include "Core/DecoderLut.h"
+#include "core/DecoderLut.h"
 #include <assert.h>
 #include <string.h>
 

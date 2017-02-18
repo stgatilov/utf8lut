@@ -2,12 +2,12 @@
 
 #include <stdint.h>
 #include <assert.h>
-#include "Base/PerfDefs.h"
-#include "Core/DecoderLut.h"
-#include "Core/DecoderProcess.h"
-#include "Core/ProcessTrivial.h"
-#include "Base/Timing.h"
-#include "Buffer/BaseBufferProcessor.h"
+#include "base/PerfDefs.h"
+#include "core/DecoderLut.h"
+#include "core/DecoderProcess.h"
+#include "core/ProcessTrivial.h"
+#include "base/Timing.h"
+#include "buffer/BaseBufferProcessor.h"
 
 FORCEINLINE const char *FindUtf8Border(const char *pSource) {
     for (int i = 0; i < 4; i++) {

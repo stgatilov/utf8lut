@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "Base/PerfDefs.h"
+#include "base/PerfDefs.h"
 
 namespace DfaUtf8 {
     #include "Dfa.h"
