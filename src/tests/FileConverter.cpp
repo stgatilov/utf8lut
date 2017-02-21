@@ -84,15 +84,22 @@ struct Config {
         Check(srcFormat != dstFormat, "Source and destination encoding must be different (%d)\n", srcFormat);
         Check(srcFormat == dfUtf8 || dstFormat == dfUtf8, "Either source of destination encoding must be UTF-8\n");
         Check(!fileToFile || (srcPath[0] && dstPath[0]), "Both input and output must be file paths when using file-to-file mode\n");
-        Check(maxBytesFast >= 1 && maxBytesFast <= 3, "Fast path can process up to 1-byte, 2-byte, or 3-byte code points (%d)\n", maxBytesFast);
+        Check(maxBytesFast >= 0 && maxBytesFast <= 3, "Fast path can process up to 1-byte, 2-byte, or 3-byte code points (%d)\n", maxBytesFast);
         Check(checkMode >= cmFast && checkMode <= cmValidate, "Checking mode must be 0 (fast), 1 (full), or 2 (validate)  (%d)", checkMode);
-        if (errorCorrection && !smallConverter) {
-            smallConverter = true;
-            logprintf("Note: Error correction forces usage of 'small' processor\n");
-        }
-        if (errorCorrection && checkMode != cmValidate) {
+        if (maxBytesFast == 0) {
+            logprintf("Note: trivial convertion is used (no fast path)\n");
             checkMode = cmValidate;
-            logprintf("Note: Error correction forces 'validate' mode of processor\n");
+            smallConverter = true;
+        }
+        else {
+            if (errorCorrection && !smallConverter) {
+                smallConverter = true;
+                logprintf("Note: Error correction forces usage of 'small' processor\n");
+            }
+            if (errorCorrection && checkMode != cmValidate) {
+                checkMode = cmValidate;
+                logprintf("Note: Error correction forces 'validate' mode of processor\n");
+            }
         }
 
         logprintf("Starting the following conversion");
