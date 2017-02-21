@@ -19,6 +19,7 @@ BaseBufferProcessor* GenerateProcessor(int srcFormat, int dstFormat, int maxByte
         TRY_OPT(from, to, maxB, cmValidate);
 
     #define TRY_DIR(from, to) \
+        TRY_PROC(from, to, 0, 2, 1); \
         TRY_DB(from, to, 1); \
         TRY_DB(from, to, 2); \
         TRY_DB(from, to, 3);

@@ -591,6 +591,7 @@ void RunTest(const Data &data, const std::string &name, const std::string *optio
         answer = SimpleConvert(data, from, to, &maxBytes);
         printf(" %c[", (answer.success ? '#' : 'o'));
 
+        RunConversion(from, to, 2, 0, 1);
         for (int mode = 0; mode <= 2; mode++)
             for (int bytes = 1; bytes <= 3; bytes++) {
                 static const int streams[] = {1, 4};
