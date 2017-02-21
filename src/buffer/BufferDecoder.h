@@ -23,8 +23,8 @@ FORCEINLINE const char *FindUtf8Border(const char *pSource) {
 }
 
 /**params:
- * MaxBytes = 1, 2, 3
- * StreamsNum = 0, 1, 4
+ * MaxBytes = 0, 1, 2, 3
+ * StreamsNum = 1, 4
  * Mode = fast, full, validate
  * OutputType = 2, 4
  */
@@ -69,10 +69,11 @@ private:
 public:
 
     BufferDecoder() {
-        static_assert(MaxBytes >= 1 && MaxBytes <= 3, "MaxBytes must be between 1 and 3");
+        static_assert(MaxBytes >= 0 && MaxBytes <= 3, "MaxBytes must be between 0 and 3");
         static_assert(OutputType == 2 || OutputType == 4, "OutputType must be either 2 or 4");
         static_assert(Mode >= 0 && Mode <= dmAllCount, "Mode must be from DecoderMode enum");
-        static_assert(StreamsNum == 0 || StreamsNum == 1 || StreamsNum == 4, "StreamsNum can be only 0, 1 or 4");
+        static_assert(StreamsNum == 1 || StreamsNum == 4, "StreamsNum can be only 1 or 4");
+        static_assert(MaxBytes > 0 || StreamsNum == 1, "StreamNum must be 1 when MaxBytes = 0");
     }
 
     virtual int GetStreamsCount() const {
@@ -133,7 +134,7 @@ public:
             const char *inputPtr = inputBuffer + inputDone;
             char *outputPtr = outputBuffer[0] + outputDone[0];
             bool ok;
-            if (StreamsNum == 1) 
+            if (MaxBytes > 0)
                 ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, lastBlockMode);
             else
                 ok = DecodeTrivial<OutputType>(inputPtr, inputBuffer + inputSize, outputPtr);

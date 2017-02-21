@@ -10,8 +10,8 @@
 #include "buffer/BaseBufferProcessor.h"
 
 /**params:
- * MaxBytes = 1, 2, 3
- * UnrollNum = 0, 1, 4
+ * MaxBytes = 0, 1, 2, 3
+ * UnrollNum = 1, 4
  * Mode = fast, full, validate
  * InputType = 2, 4
  */
@@ -53,10 +53,11 @@ private:
 public:
 
     BufferEncoder() {
-        static_assert(MaxBytes >= 1 && MaxBytes <= 3, "MaxBytes must be between 1 and 3");
+        static_assert(MaxBytes >= 0 && MaxBytes <= 3, "MaxBytes must be between 0 and 3");
         static_assert(InputType == 2 || InputType == 4, "InputType must be either 2 or 4");
         static_assert(Mode >= 0 && Mode <= emAllCount, "Mode must be from EncoderMode enum");
-        static_assert(UnrollNum == 0 || UnrollNum == 1 || UnrollNum == 4, "UnrollNum must be 0, 1 or 4");
+        static_assert(UnrollNum == 1 || UnrollNum == 4, "UnrollNum must be 1 or 4");
+        static_assert(MaxBytes > 0 || UnrollNum == 1, "UnrollNum must 1 when MaxBytes = 0");
     }
 
 
@@ -89,7 +90,7 @@ public:
         }
 
         bool ok;
-        if (UnrollNum >= 1)
+        if (MaxBytes > 0)
             ok = ProcessSimple(inputPtr, inputBuffer + inputSize, outputPtr, lastBlockMode);
         else
             ok = EncodeTrivial<InputType>(inputPtr, inputBuffer + inputSize, outputPtr);
