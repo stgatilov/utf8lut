@@ -50,7 +50,6 @@ extern TimingData timingData;
 #define TIMING_START(name) { \
     int slot = CONCAT(TIMING_, name); \
     uint64_t &startTime = timingData.startTime[slot]; \
-    assert(startTime == 0); \
     startTime = get_ticks(); \
 }
 
