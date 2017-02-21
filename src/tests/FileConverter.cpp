@@ -90,6 +90,7 @@ struct Config {
             logprintf("Note: trivial convertion is used (no fast path)\n");
             checkMode = cmValidate;
             smallConverter = true;
+            errorCorrection = false;
         }
         else {
             if (errorCorrection && !smallConverter) {
