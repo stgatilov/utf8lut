@@ -73,3 +73,11 @@ ADD_EXECUTABLE (FileConverter
     tests/FileConverter.cpp
 )
 set_target_properties(FileConverter PROPERTIES COMPILE_DEFINITIONS "TIMING")
+
+ADD_EXECUTABLE (Example
+    ${base_sources}
+    ${core_sources}
+    ${buffer_sources}
+    ${message_sources}
+    tests/Example.cpp
+)
