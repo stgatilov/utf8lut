@@ -4,6 +4,13 @@ PROJECT(utf8lut)
 
 #=================================================
 
+INCLUDE_DIRECTORIES(.)
+
+IF(NOT MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mssse3 -std=c++11")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+ENDIF()
+
 SET (base_sources
     base/PerfDefs.h
     base/Timing.cpp
@@ -31,8 +38,6 @@ SET (message_sources
     message/MessageConverter.cpp
     message/MessageConverter.h
 )
-
-INCLUDE_DIRECTORIES(.)
 
 #=================================================
 
