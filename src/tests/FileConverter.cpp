@@ -417,7 +417,7 @@ int main(int argc, char **argv) {
     clock_t endTime = clock();
     double elapsedTime = double(endTime - startTime) / CLOCKS_PER_SEC;
 
-    logprintf("The task was finished in %0.3lf seconds\n", elapsedTime);
+    logprintf("The task was finished in %0.3f seconds\n", elapsedTime);
     PrintResult(allResult);
     if (cfg.errorCorrection) {
         if (errorCounter > 0)
