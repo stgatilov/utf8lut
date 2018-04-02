@@ -9,6 +9,6 @@ g++ \
     $ROOT"tests/FileConverter.cpp" \
     -I"../src" -o"FileConverter_gcc" \
     -D NDEBUG -D TIMING \
-    --std=c++11 -mssse3 -O3
+    -std=c++11 -mssse3 -O3
 
 strip FileConverter_gcc

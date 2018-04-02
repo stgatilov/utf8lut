@@ -7,7 +7,7 @@ g++ \
     $ROOT"message/MessageConverter.cpp" \
     $ROOT"tests/CorrectnessTests.cpp" \
     -I"../src" -o"CorrectnessTests_gcc" \
-    --std=c++11 -mssse3 -O3
+    -std=c++11 -mssse3 -O3
 
 strip CorrectnessTests_gcc
 
