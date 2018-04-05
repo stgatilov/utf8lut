@@ -1,6 +1,8 @@
 #include "message/MessageConverter.h"
 #include <stdio.h>
 
+//=====================================================================================================
+
 ConversionResult ConvertInMemory(BaseBufferProcessor &processor, const char *inputBuffer, long long inputSize, char *outputBuffer, long long outputSize) {
     ConversionResult result;
     result.status = (ConversionStatus)-1;
@@ -62,8 +64,95 @@ long long ConvertInMemorySize(BaseBufferProcessor &processor, long long inputSiz
     return reqSize;
 }
 
+//=====================================================================================================
+
+#if defined(_MSC_VER)
+#include "windows.h"
+
+ConversionResult ConvertFile_MemoryMappedWhole(BaseBufferProcessor &processor, const char *inputFilePath, const char *outputFilePath, ConvertFilesSettings settings) {
+#define CHECK_FOR_ERROR(cond) \
+    if (cond) { \
+        result.status = csInputOutputNoAccess; \
+        goto end; \
+    } \
+
+    GetLastError();
+    assert(settings.type == ftMemoryMapWhole);
+    ConversionResult result;
+    result.status = (ConversionStatus)-1;
+    result.inputSize = 0;
+    result.outputSize = 0;
+
+    HANDLE hInFile = INVALID_HANDLE_VALUE, hOutFile = INVALID_HANDLE_VALUE;
+    HANDLE hInMap = NULL, hOutMap = NULL;
+    LPVOID pInView = NULL, pOutView = NULL;
+
+    hInFile = CreateFileA(inputFilePath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    CHECK_FOR_ERROR(hInFile == INVALID_HANDLE_VALUE);
+    LARGE_INTEGER szIn;
+    BOOL sizeOk = GetFileSizeEx(hInFile, &szIn);
+    CHECK_FOR_ERROR(!sizeOk);
+    //TODO: szIn == NULL?
+    hInMap = CreateFileMappingA(hInFile, NULL, PAGE_READONLY, 0, 0, NULL);
+    CHECK_FOR_ERROR(hInMap == NULL);
+    pInView = MapViewOfFile(hInMap, FILE_MAP_READ, 0, 0, 0);
+    CHECK_FOR_ERROR(pInView == NULL);
+
+    LARGE_INTEGER szOut;
+    szOut.QuadPart = ConvertInMemorySize(processor, szIn.QuadPart);
+    hOutFile = CreateFileA(outputFilePath, GENERIC_WRITE | GENERIC_READ , 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
+    CHECK_FOR_ERROR(hOutFile == INVALID_HANDLE_VALUE);
+    hOutMap = CreateFileMappingA(hOutFile, NULL, PAGE_READWRITE, szOut.HighPart, szOut.LowPart, NULL);
+    CHECK_FOR_ERROR(hOutMap == NULL);
+    pOutView = MapViewOfFile(hOutMap, FILE_MAP_WRITE, 0, 0, 0);
+    CHECK_FOR_ERROR(pOutView == NULL);
+
+    //pOutView = new char[szOut.QuadPart];
+    result = ConvertInMemory(processor, (const char*)pInView, szIn.QuadPart,(char*)pOutView, szOut.QuadPart);
+    //delete pOutView; pOutView = NULL;
+end:
+    DWORD err = GetLastError();
+    if (pInView != NULL)
+        UnmapViewOfFile(pInView);
+    if (hInMap != NULL && hInMap != INVALID_HANDLE_VALUE)
+        CloseHandle(hInMap);
+    if (hInFile != NULL && hInFile != INVALID_HANDLE_VALUE)
+        CloseHandle(hInFile);
+    if (pOutView != NULL)
+        UnmapViewOfFile(pOutView);
+    if (hOutMap != NULL && hOutMap != INVALID_HANDLE_VALUE)
+        CloseHandle(hOutMap);
+    if (result.status != csInputOutputNoAccess) {
+        szOut.QuadPart = result.outputSize;
+        SetFilePointer(hOutFile, szOut.LowPart, &szOut.HighPart, FILE_BEGIN);
+        SetEndOfFile(hOutFile);
+    }
+    if (hOutFile != NULL && hOutFile != INVALID_HANDLE_VALUE)
+        CloseHandle(hOutFile);
+#undef CHECK_FOR_ERROR
+
+    return result;
+}
+
+#else
+
+ConversionResult ConvertFile_MemoryMappedWhole(BaseBufferProcessor &processor, const char *inputFilePath, const char *outputFilePath, ConvertFilesSettings settings) {
+    ConversionResult result;
+    result.status = csNotImplemented;
+    result.inputSize = 0;
+    result.outputSize = 0;
+
+    return result;
+}
+
+#endif
+
+//=====================================================================================================
 
 ConversionResult ConvertFile(BaseBufferProcessor &processor, const char *inputFilePath, const char *outputFilePath, ConvertFilesSettings settings) {
+    if (settings.type == ftMemoryMapWhole)
+        return ConvertFile_MemoryMappedWhole(processor, inputFilePath, outputFilePath, settings);
+
     ConversionResult result;
     result.status = (ConversionStatus)-1;
     result.inputSize = 0;

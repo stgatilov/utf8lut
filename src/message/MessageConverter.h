@@ -27,6 +27,10 @@ enum ConversionStatus {
     // Cannot work with given input/output.
     // In case of files: cannot find or open input file, or cannot write to output file.
     // In case of buffers: some non-empty buffer has zero pointer, or some buffer has negative size.
+
+    csNotImplemented = 5,
+    // Conversion with specified settings not yet implemented on current platform.
+    // For example, if you use ConvertFile with memory mapping, then OS-specific code is needed.
 };
 
 struct ConversionResult {
@@ -64,6 +68,9 @@ enum FileIOType {
     // Use fopen + fread + fwrite + fclose.
     // Cross-platform.
 
+    ftMemoryMapWhole = 1,
+    // Map whole file into virtual address space.
+    // Uses OS-specific API.
 
     //TODO: perhaps implement some other types?
     //ftPosix,
