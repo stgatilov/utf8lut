@@ -66,7 +66,8 @@ long long ConvertInMemorySize(BaseBufferProcessor &processor, long long inputSiz
 
 //=====================================================================================================
 
-#if defined(_MSC_VER)
+#if defined(_WIN32)
+#define _WIN32_WINNT 0x502
 #include "windows.h"
 
 ConversionResult ConvertFile_MemoryMappedWhole(BaseBufferProcessor &processor, const char *inputFilePath, const char *outputFilePath, ConvertFilesSettings settings) {
@@ -86,11 +87,12 @@ ConversionResult ConvertFile_MemoryMappedWhole(BaseBufferProcessor &processor, c
     HANDLE hInFile = INVALID_HANDLE_VALUE, hOutFile = INVALID_HANDLE_VALUE;
     HANDLE hInMap = NULL, hOutMap = NULL;
     LPVOID pInView = NULL, pOutView = NULL;
+    LARGE_INTEGER szIn, szOut;
+    BOOL sizeOk = FALSE;
 
     hInFile = CreateFileA(inputFilePath, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     CHECK_FOR_ERROR(hInFile == INVALID_HANDLE_VALUE);
-    LARGE_INTEGER szIn;
-    BOOL sizeOk = GetFileSizeEx(hInFile, &szIn);
+    sizeOk = GetFileSizeEx(hInFile, &szIn);
     CHECK_FOR_ERROR(!sizeOk);
     //TODO: szIn == NULL?
     hInMap = CreateFileMappingA(hInFile, NULL, PAGE_READONLY, 0, 0, NULL);
@@ -98,7 +100,6 @@ ConversionResult ConvertFile_MemoryMappedWhole(BaseBufferProcessor &processor, c
     pInView = MapViewOfFile(hInMap, FILE_MAP_READ, 0, 0, 0);
     CHECK_FOR_ERROR(pInView == NULL);
 
-    LARGE_INTEGER szOut;
     szOut.QuadPart = ConvertInMemorySize(processor, szIn.QuadPart);
     hOutFile = CreateFileA(outputFilePath, GENERIC_WRITE | GENERIC_READ , 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_SEQUENTIAL_SCAN, NULL);
     CHECK_FOR_ERROR(hOutFile == INVALID_HANDLE_VALUE);
