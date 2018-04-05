@@ -372,7 +372,11 @@ int main(int argc, char **argv) {
     clock_t startTime = clock();
     if (cfg.fileToFile) {
         for (int r = 0; r < cfg.numberOfRuns; r++) {
-            ConversionResult convres = ConvertFile(*processor, cfg.srcPath, cfg.dstPath);
+            ConvertFilesSettings settings;
+#ifdef _WIN32
+            settings.type = ftMemoryMapWhole;
+#endif
+            ConversionResult convres = ConvertFile(*processor, cfg.srcPath, cfg.dstPath, settings);
             if (r && !IsSameResult(allResult, convres))
                 logprintf("Consecutive conversion runs produce different results!\n");
             allResult = convres;
