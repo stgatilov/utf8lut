@@ -7,8 +7,11 @@ syntax: glob
 *.asm
 *.txt
 *.fb2
-u8u16/*
 *.pdb
 *.ilk
 *.s
-data/*
+
+syntax: regexp
+^bin/
+^data/
+^u8u16/
