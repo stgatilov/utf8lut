@@ -8,12 +8,14 @@ It can quickly encode or decode large buffers of UTF-8 data, using SSSE3 instruc
 ## Conversion settings
 
 Four types of conversion are supported:
+
 * from UTF-8 to UTF-16LE (decode)
 * from UTF-8 to UTF-32LE (decode)
 * from UTF-16LE to UTF-8 (encode)
 * from UTF-32LE to UTF-8 (encode)
 
 All these three UTF encoding are understood precisely as the Unicode standards define, in particular:
+
 1. Only valid unicode values are allowed. Code points U+D800 through U+DFFF and the ones greater than U+10FFFF are forbidden.
 2. Non-BMP characters are encoded as surrogate pairs in UTF-16.
 3. Overlong encodings in UTF-8 are considered invalid.
@@ -23,11 +25,13 @@ The fast path consists of heavily templated C++ code. It allows the user to tune
 The fast path works by default, but if it meets some data it cannot handle, it temporarily switches to the slow path. The slow path can handle anything, but it is slower. Moreover, the switches between the code paths cost time. A rule of thumb is to make sure that more than 99% of characters can be handled by fast path for good performance.
 
 The first template argument (*MaxBytes*) defines the range of code points supported by fast path:
+
 * *MaxBytes = 3*:  support [U+0000 .. U+FFFF] --- encoded as at most 3 bytes in UTF-8  (Basic Multilingual Plane).
 * *MaxBytes = 2*:  support [U+0000 .. U+07FF] --- encoded as at most 2 bytes in UTF-8.
 * *MaxBytes = 1*:  support [U+0000 .. U+007F] --- encoded as 1 byte in UTF-8.
 
 The second template argument (*Mode*) controls the slow path and validation:
+
 * *Mode = cmValidate*: full processing and validation --- invalid input causes converter to stop and return error, so arbitrary sequence of bytes can be given as input.
 * *Mode = cmFull*: validation is removed --- invalid input causes undefined behavior, but any valid input is processed correctly.
 * *Mode = cmFast*: slow path and validation are removed --- invalid input causes undefined behavior, and a character unsupported by fast path also causes undefined behavior.
@@ -40,6 +44,7 @@ Simplest error correction can be optionally enabled in validating converters.
 
 The utf8lut library and its applications are built using "keep it simple" principle =)
 All you need to do is:
+
 1. add the `src/` directory to C++ include path
 2. add a bunch of cpp files to the build process
 3. (non-MSVC): add `-mssse3 -std=c++11` to compiler parameters
