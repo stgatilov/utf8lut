@@ -39,7 +39,7 @@ template<bool Validate> void DecoderLutTable<Validate>::ComputeAll() {
         data[i] = empty;
     //start recursive search for valid masks
     int sizes[32];
-    ComputeRec(sizes, 0, 0);    //about 25K entries total
+    ComputeRec(sizes, 0, 0);    //10609 entries total
 }
 
 template<bool Validate> void DecoderLutTable<Validate>::ComputeRec(int *sizes, int num, int total) {
