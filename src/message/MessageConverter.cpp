@@ -9,11 +9,11 @@ ConversionResult ConvertInMemory(BaseBufferProcessor &processor, const char *inp
     result.inputSize = 0;
     result.outputSize = 0;
     
-    if (inputSize < 0 || !inputBuffer && inputSize != 0) {
+    if (inputSize < 0 || (!inputBuffer && inputSize != 0)) {
         result.status = csInputOutputNoAccess;
         return result;
     }
-    if (outputSize < 0 || !outputBuffer && outputSize != 0) {
+    if (outputSize < 0 || (!outputBuffer && outputSize != 0)) {
         result.status = csInputOutputNoAccess;
         return result;
     }
