@@ -404,6 +404,7 @@ int main(int argc, char **argv) {
 
     ConversionResult allResult;
     clock_t startTime = clock();
+    uint64_t startTicks = get_ticks();
     if (cfg.fileToFile) {
         for (int r = 0; r < cfg.numberOfRuns; r++) {
             ConvertFilesSettings settings;
@@ -455,6 +456,7 @@ int main(int argc, char **argv) {
         logprintf("\n");
     }
     clock_t endTime = clock();
+    uint64_t endTicks = get_ticks();
     double elapsedTime = double(endTime - startTime) / CLOCKS_PER_SEC;
 
     logprintf("The task was finished in %0.3f seconds\n", elapsedTime);
@@ -479,6 +481,8 @@ int main(int argc, char **argv) {
         TimingPrintAll(LOG_FILE);
     }
 #endif
+    double ticksPerElem = double(endTicks - startTicks) / cfg.numberOfRuns / allResult.inputSize;
+    logprintf("From total time   :  %0.3lf cyc/el\n", ticksPerElem);
 
     return 0;
 }
