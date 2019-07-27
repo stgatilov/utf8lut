@@ -64,6 +64,7 @@ struct Config {
     int srcRandomLen;           // input: [rnd%c%c%c%c:%d]
     bool srcRandomChars[4];     // -- | --
     bool dstPrintHash;          // output: [hash]
+    bool countBytes;            // --countbytes
     
     Config() {
         srcFormat = dfUtf8;
@@ -78,6 +79,7 @@ struct Config {
         dstPath[0] = 0;
         srcRandomLen = -1;
         dstPrintHash = false;
+        countBytes = false;
     }
     void Init() {
         Check(numberOfRuns >= 0, "Cannot run negative number of times: %d\n", numberOfRuns);
@@ -86,6 +88,7 @@ struct Config {
         Check(!fileToFile || (srcPath[0] && dstPath[0]), "Both input and output must be file paths when using file-to-file mode\n");
         Check(maxBytesFast >= 0 && maxBytesFast <= 3, "Fast path can process up to 1-byte, 2-byte, or 3-byte code points (%d)\n", maxBytesFast);
         Check(checkMode >= cmFast && checkMode <= cmValidate, "Checking mode must be 0 (fast), 1 (full), or 2 (validate)  (%d)", checkMode);
+        Check(!countBytes || (srcFormat == dfUtf8 && !fileToFile), "Counting bytes is only implemented for UTF-8 input and memory-to-memory");
         if (maxBytesFast == 0) {
             logprintf("Note: trivial convertion is used (no fast path)\n");
             checkMode = cmValidate;
@@ -235,6 +238,34 @@ unsigned int GetHashOfBuffer(const char *buffer, long long size) {
     return hash;
 }
 
+void PrintByteCounts(const char *buffer, long long size) {
+    long long cnt[5] = {0};
+    for (long long i = 0; i < size; i++) {
+        unsigned char byte = buffer[i];
+        int bl = (
+            byte < 0x80U ? 1 : 
+            byte < 0xC0U ? 0 : 
+            byte < 0xE0U ? 2 : 
+            byte < 0xF0U ? 3 : 
+            4
+        );
+        cnt[bl]++;
+    }
+    logprintf("Byte lengths: ");
+    for (int i = 1; i <= 4; i++) logprintf(" %" PRId64, cnt[i]);
+    logprintf("\n");
+    long long u8size = 0, u16size = 0, u32size = 0, chars = 0;
+    for (int i = 1; i <= 4; i++) {
+        u8size += cnt[i] * i;
+        u16size += cnt[i] * (i<=3 ? 2 : 4);
+        u32size += cnt[i] * 4;
+        chars += cnt[i];
+    }
+    logprintf("Number of characters: %" PRId64 "\n", chars);
+    logprintf("UTF-8  size: %" PRId64 "\n", u8size);
+    logprintf("UTF-16 size: %" PRId64 "\n", u16size);
+    logprintf("UTF-32 size: %" PRId64 "\n", u32size);
+}
 
 void PrintHelp() {
     logprintf(
@@ -326,6 +357,8 @@ int main(int argc, char **argv) {
             cfg.smallConverter = true;
         else if (strcmp(larg, "--file") == 0)
             cfg.fileToFile = true;
+        else if (strcmp(larg, "--countbytes") == 0)
+            cfg.countBytes = true;
         else if (strcmp(larg, "-ec") == 0)
             cfg.errorCorrection = true;
         else if (sscanf(larg, "-k=%d", &num) == 1)
@@ -394,6 +427,8 @@ int main(int argc, char **argv) {
             ReadFileContents(cfg.srcPath, inputData, inputSize);
             logprintf("Read input buffer from file\n");
         }
+        if (cfg.countBytes)
+            PrintByteCounts(inputData, inputSize);
 
         char *outputData = 0;
         long long outputSize = ConvertInMemorySize(*processor, inputSize, &outputData);
