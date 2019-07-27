@@ -113,11 +113,20 @@ public:
                 STREAM_CHECK(3);
                 #define STREAM_STEP(k) \
                     bool ok##k = DecoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, OutputType>()(inputPtr##k, outputPtr##k, ptrTable); \
-                    if (!ok##k) break;
+                    if (!ok##k) goto slow;
                 STREAM_STEP(0);
                 STREAM_STEP(1);
                 STREAM_STEP(2);
                 STREAM_STEP(3);
+slow:
+                #define STREAM_SLOW(k) \
+                    if (!ok##k && Mode != dmFast) \
+                        ok##k = DecodeTrivial<OutputType>(inputPtr##k, inputPtr##k + 16, outputPtr##k); \
+                    if (!ok##k) break;
+                STREAM_SLOW(0);
+                STREAM_SLOW(1);
+                STREAM_SLOW(2);
+                STREAM_SLOW(3);
             }
             #define STREAM_FINISH(k) \
                 bool ok##k = ProcessSimple(inputPtr##k, inputEnd##k, outputPtr##k, true); \
