@@ -65,24 +65,30 @@ def parse_log(log_name):
         internal_result = float(m.group(1)) / 1000.0
     return internal_result, external_result
 
+def main():
+    shutil.rmtree('logs', ignore_errors=True)
+    os.mkdir('logs')
 
-shutil.rmtree('logs', ignore_errors=True)
-os.mkdir('logs')
+    #print(parse_log(run_sol_test("utf8lut:1S", "chinese")))
+    #print(parse_log(run_sol_test("u8u16", "chinese")))
+    #print(parse_log(run_sol_test("utf8sse4", "chinese")))
 
-#print(parse_log(run_sol_test("utf8lut:1S", "chinese")))
-#print(parse_log(run_sol_test("u8u16", "chinese")))
-#print(parse_log(run_sol_test("utf8sse4", "chinese")))
+    jsonall = {}
+    jsonall['solutions'] = list(Solutions.keys())
+    jsonall['tests'] = list(Tests.keys())
+    data = jsonall['xdata'] = {}
+    for test in Tests:
+        data[test] = {}
+        for sol in Solutions:
+            print("Test %s, Sol %s:" % (test, sol), end="", flush=True)
+            log_name = run_sol_test(sol, test, encode)
+            print(" finished: ", end="", flush=True)
+            result = parse_log(log_name)
+            print(result[0], '/', result[1], flush=True)
+            data[test][sol] = (result[0], result[1], log_name)
 
-data = {}
-for test in Tests:
-    data[test] = {}
-    for sol in Solutions:
-        print("Test %s, Sol %s:" % (test, sol), end="", flush=True)
-        log_name = run_sol_test(sol, test, encode)
-        print(" finished: ", end="", flush=True)
-        result = parse_log(log_name)
-        print(result[0], '/', result[1], flush=True)
-        data[test][sol] = (result[0], result[1], log_name)
+    with open("logs/results.json", "wt") as f:
+        json.dump(jsonall, f, indent=2, sort_keys=True)
 
-with open("logs/results.json", "wt") as f:
-    json.dump(data, f, indent=2, sort_keys=True)
+if __name__ == "__main__":
+    main()
