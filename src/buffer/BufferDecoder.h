@@ -98,7 +98,8 @@ public:
                 const char *inputStart##k = splits[k]; \
                 const char *inputEnd##k = splits[k+1]; \
                 const char *inputPtr##k = inputStart##k; \
-                char *outputPtr##k = outputBuffer[k];
+                char *outputPtr##k = outputBuffer[k]; \
+                bool ok##k;
             STREAM_START(0)
             STREAM_START(1)
             STREAM_START(2)
@@ -112,7 +113,7 @@ public:
                 STREAM_CHECK(2);
                 STREAM_CHECK(3);
                 #define STREAM_STEP(k) \
-                    bool ok##k = DecoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, OutputType>()(inputPtr##k, outputPtr##k, ptrTable); \
+                    ok##k = DecoderCore<MaxBytes, Mode != dmFast, Mode == dmValidate, OutputType>()(inputPtr##k, outputPtr##k, ptrTable); \
                     if (!ok##k) goto slow;
                 STREAM_STEP(0);
                 STREAM_STEP(1);
@@ -129,7 +130,7 @@ slow:
                 STREAM_SLOW(3);
             }
             #define STREAM_FINISH(k) \
-                bool ok##k = ProcessSimple(inputPtr##k, inputEnd##k, outputPtr##k, true); \
+                ok##k = ProcessSimple(inputPtr##k, inputEnd##k, outputPtr##k, true); \
                 inputDone = int(inputPtr##k - inputBuffer); \
                 outputDone[k] = int(outputPtr##k - outputBuffer[k]); \
                 if (!ok##k || (k+1 < StreamsNum && inputPtr##k != inputEnd##k)) \
