@@ -1,3 +1,17 @@
+Note: everything within "contrib" subdirectory is NOT the part of utf8lut code!
+
+Here is the summary of "contrib" code:
+  contrib/u8u16: taken from http://u8u16.costar.sfu.ca/svn/trunk, version dated 2013-04-10
+    see README, COPYRIGHT, and OSL3.0.txt files there
+  contrib/utf8fuzz: taken from https://github.com/andrewffff/utf8fuzz.git, version dated 2012-11-27
+    see LICENSE.txt there
+  contrib/utf8sse4: taken from https://github.com/woboq/utf8sse4.git, version dated 2012-07-26
+    license conditions unknown
+
+Thus, the BSL license provided below does NOT apply to the "contrib" contents.
+
+===========================================================================
+
 Boost Software License - Version 1.0 - August 17th, 2003
 
 Permission is hereby granted, free of charge, to any person or organization
