@@ -17,6 +17,8 @@
 #include "codecs/stangvik.h"
 #include "codecs/postgresql.h"
 #include "codecs/u8u16.h"
+#include "codecs/utf8lut/buffer/ProcessorSelector.h"
+#include "codecs/utf8lut/buffer/ProcessorPlugins.h"
 
 using namespace std;
 using namespace AfUtf8;
@@ -206,6 +208,43 @@ public:
 };
 
 
+
+class utf8lutValidator : public Validator {
+public:
+	BaseBufferProcessor *processor;
+	InteractiveOutput *output;
+
+	~utf8lutValidator() {
+		delete output;
+		delete processor;
+	}
+	utf8lutValidator() {
+		typedef ProcessorSelector<dfUtf8, dfUtf16>::WithOptions<cmValidate, 3, 4> MyProcessorFactory;
+		processor = MyProcessorFactory::Create();
+		output = new InteractiveOutput(*processor);
+	}
+
+	std::string name() const { return "utf8lut"; }
+	bool ours() const { return false; }
+
+	bool validate(const memory<unsigned char>& v) {
+		processor->Clear();
+		ContiguousInput input(*processor, (char*) &*v.begin(), v.size());
+		processor->AddPlugin(*output);
+		while (!input.Finished()) {
+			//do all the work
+			bool ok = processor->Process();
+			//check if hard error occurred
+			if (!ok)
+				return false;
+		}
+		if (input.GetRemainingDataSize() != 0)
+			return false;
+		return true;
+	}
+};
+
+
 vector<Validator*> Validator::createAll(bool includeBrokenImpls) {
 	vector<Validator*> validators;
 
@@ -214,6 +253,7 @@ vector<Validator*> Validator::createAll(bool includeBrokenImpls) {
 	validators.push_back(new StangvikValidator());
 	validators.push_back(new PostgresqlValidator());
 	validators.push_back(new U8u16Validator());
+	validators.push_back(new utf8lutValidator());
 
 	if(includeBrokenImpls) {
 		/* iconv isn't picky enough - it's actually CESU-8 */
