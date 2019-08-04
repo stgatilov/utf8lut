@@ -1,0 +1,8 @@
+From total time   :  3.857 cyc/el
+Buffer conversion timing.
+Binary Order of Magnitude Profile
+BOM 11: 260 (avg time: 2003 cyc/kElem) Cumulative: 260 (avg: 2003 cyc/kElem)
+BOM 12: 245132 (avg time: 3543 cyc/kElem) Cumulative: 245392 (avg: 3542 cyc/kElem)
+BOM 13: 16710 (avg time: 4301 cyc/kElem) Cumulative: 262102 (avg: 3590 cyc/kElem)
+BOM 14: 37 (avg time: 14129 cyc/kElem) Cumulative: 262139 (avg: 3591 cyc/kElem)
+BOM 15: 5 (avg time: 19600 cyc/kElem) Cumulative: 262144 (avg: 3592 cyc/kElem)

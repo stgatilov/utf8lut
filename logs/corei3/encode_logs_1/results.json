@@ -1,0 +1,119 @@
+{
+  "solutions": [
+    "trivial",
+    "utf8lut:1S",
+    "utf8lut:4S"
+  ],
+  "tests": [
+    "[rnd1111:400000]",
+    "[rnd1110:500000]",
+    "chinese",
+    "russian",
+    "english",
+    "unicode"
+  ],
+  "xdata": {
+    "[rnd1110:500000]": {
+      "trivial": [
+        9.804,
+        9.811,
+        "logs/trivial___rnd1110_500000_.log"
+      ],
+      "utf8lut:1S": [
+        0.862,
+        0.864,
+        "logs/utf8lut_1S___rnd1110_500000_.log"
+      ],
+      "utf8lut:4S": [
+        0.846,
+        0.851,
+        "logs/utf8lut_4S___rnd1110_500000_.log"
+      ]
+    },
+    "[rnd1111:400000]": {
+      "trivial": [
+        9.356,
+        9.362,
+        "logs/trivial___rnd1111_400000_.log"
+      ],
+      "utf8lut:1S": [
+        10.028,
+        10.034,
+        "logs/utf8lut_1S___rnd1111_400000_.log"
+      ],
+      "utf8lut:4S": [
+        9.984,
+        9.99,
+        "logs/utf8lut_4S___rnd1111_400000_.log"
+      ]
+    },
+    "chinese": {
+      "trivial": [
+        4.224,
+        4.231,
+        "logs/trivial__chinese.log"
+      ],
+      "utf8lut:1S": [
+        0.853,
+        0.856,
+        "logs/utf8lut_1S__chinese.log"
+      ],
+      "utf8lut:4S": [
+        0.833,
+        0.838,
+        "logs/utf8lut_4S__chinese.log"
+      ]
+    },
+    "english": {
+      "trivial": [
+        1.636,
+        1.64,
+        "logs/trivial__english.log"
+      ],
+      "utf8lut:1S": [
+        0.86,
+        0.863,
+        "logs/utf8lut_1S__english.log"
+      ],
+      "utf8lut:4S": [
+        0.839,
+        0.843,
+        "logs/utf8lut_4S__english.log"
+      ]
+    },
+    "russian": {
+      "trivial": [
+        4.783,
+        4.789,
+        "logs/trivial__russian.log"
+      ],
+      "utf8lut:1S": [
+        0.857,
+        0.859,
+        "logs/utf8lut_1S__russian.log"
+      ],
+      "utf8lut:4S": [
+        0.837,
+        0.842,
+        "logs/utf8lut_4S__russian.log"
+      ]
+    },
+    "unicode": {
+      "trivial": [
+        1.593,
+        1.597,
+        "logs/trivial__unicode.log"
+      ],
+      "utf8lut:1S": [
+        0.858,
+        0.86,
+        "logs/utf8lut_1S__unicode.log"
+      ],
+      "utf8lut:4S": [
+        0.846,
+        0.85,
+        "logs/utf8lut_4S__unicode.log"
+      ]
+    }
+  }
+}

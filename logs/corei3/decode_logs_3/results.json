@@ -1,0 +1,181 @@
+{
+  "solutions": [
+    "trivial",
+    "utf8lut:1S",
+    "utf8lut:4S",
+    "u8u16",
+    "utf8sse4"
+  ],
+  "tests": [
+    "[rnd1111:400000]",
+    "[rnd1110:500000]",
+    "chinese",
+    "russian",
+    "english",
+    "unicode"
+  ],
+  "xdata": {
+    "[rnd1110:500000]": {
+      "trivial": [
+        17.258,
+        17.267,
+        "logs/trivial___rnd1110_500000_.log"
+      ],
+      "u8u16": [
+        3.947,
+        4.251,
+        "logs/u8u16___rnd1110_500000_.log"
+      ],
+      "utf8lut:1S": [
+        4.04,
+        4.045,
+        "logs/utf8lut_1S___rnd1110_500000_.log"
+      ],
+      "utf8lut:4S": [
+        1.964,
+        2.19,
+        "logs/utf8lut_4S___rnd1110_500000_.log"
+      ],
+      "utf8sse4": [
+        null,
+        16.683,
+        "logs/utf8sse4___rnd1110_500000_.log"
+      ]
+    },
+    "[rnd1111:400000]": {
+      "trivial": [
+        15.775,
+        15.782,
+        "logs/trivial___rnd1111_400000_.log"
+      ],
+      "u8u16": [
+        7.051,
+        7.853,
+        "logs/u8u16___rnd1111_400000_.log"
+      ],
+      "utf8lut:1S": [
+        16.901,
+        16.908,
+        "logs/utf8lut_1S___rnd1111_400000_.log"
+      ],
+      "utf8lut:4S": [
+        19.08,
+        19.374,
+        "logs/utf8lut_4S___rnd1111_400000_.log"
+      ],
+      "utf8sse4": [
+        null,
+        20.039,
+        "logs/utf8sse4___rnd1111_400000_.log"
+      ]
+    },
+    "chinese": {
+      "trivial": [
+        7.552,
+        7.558,
+        "logs/trivial__chinese.log"
+      ],
+      "u8u16": [
+        3.951,
+        4.217,
+        "logs/u8u16__chinese.log"
+      ],
+      "utf8lut:1S": [
+        1.607,
+        1.61,
+        "logs/utf8lut_1S__chinese.log"
+      ],
+      "utf8lut:4S": [
+        1.107,
+        1.239,
+        "logs/utf8lut_4S__chinese.log"
+      ],
+      "utf8sse4": [
+        null,
+        4.286,
+        "logs/utf8sse4__chinese.log"
+      ]
+    },
+    "english": {
+      "trivial": [
+        7.263,
+        7.271,
+        "logs/trivial__english.log"
+      ],
+      "u8u16": [
+        1.907,
+        2.418,
+        "logs/u8u16__english.log"
+      ],
+      "utf8lut:1S": [
+        2.93,
+        2.934,
+        "logs/utf8lut_1S__english.log"
+      ],
+      "utf8lut:4S": [
+        1.998,
+        2.401,
+        "logs/utf8lut_4S__english.log"
+      ],
+      "utf8sse4": [
+        null,
+        1.183,
+        "logs/utf8sse4__english.log"
+      ]
+    },
+    "russian": {
+      "trivial": [
+        10.171,
+        10.178,
+        "logs/trivial__russian.log"
+      ],
+      "u8u16": [
+        3.511,
+        3.843,
+        "logs/u8u16__russian.log"
+      ],
+      "utf8lut:1S": [
+        2.24,
+        2.243,
+        "logs/utf8lut_1S__russian.log"
+      ],
+      "utf8lut:4S": [
+        1.434,
+        1.656,
+        "logs/utf8lut_4S__russian.log"
+      ],
+      "utf8sse4": [
+        null,
+        4.787,
+        "logs/utf8sse4__russian.log"
+      ]
+    },
+    "unicode": {
+      "trivial": [
+        7.215,
+        7.221,
+        "logs/trivial__unicode.log"
+      ],
+      "u8u16": [
+        1.616,
+        2.145,
+        "logs/u8u16__unicode.log"
+      ],
+      "utf8lut:1S": [
+        2.97,
+        2.974,
+        "logs/utf8lut_1S__unicode.log"
+      ],
+      "utf8lut:4S": [
+        2.018,
+        2.413,
+        "logs/utf8lut_4S__unicode.log"
+      ],
+      "utf8sse4": [
+        null,
+        6.055,
+        "logs/utf8sse4__unicode.log"
+      ]
+    }
+  }
+}

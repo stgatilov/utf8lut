@@ -1,0 +1,21 @@
+Note: trivial convertion is used (no fast path)
+Starting the following conversion (10000 times):
+  Input (source) in UTF-8 : war_and_piece.fb2
+  Output (dest.) in UTF-16: temp.out
+Processor settings:
+  Fast path supports code points with up to 0 bytes in UTF-8
+  Mode of input checking is: validate
+  Using small processor, i.e. single stream / no unrolling
+  Stops on any incorrect input
+
+Read input buffer from file
+Conversion (all runs) complete
+Wrote output buffer to file
+
+The task was finished in 27.019 seconds
+Conversion result: success;   converted 999999 bytes -> 1143864 bytes
+
+Internal timings:
+slot 1     DECODE :  8.644 cyc/el    9999990000 elems
+slot 2     ENCODE :  0.000 cyc/el             0 elems
+From total time   :  8.646 cyc/el

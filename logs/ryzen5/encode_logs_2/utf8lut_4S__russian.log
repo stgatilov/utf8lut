@@ -1,0 +1,20 @@
+Starting the following conversion (10000 times):
+  Input (source) in UTF-16: temp.in
+  Output (dest.) in UTF-8 : temp.out
+Processor settings:
+  Fast path supports code points with up to 3 bytes in UTF-8
+  Mode of input checking is: validate
+  Using big converter, i.e. four streams / 4x unrolling
+  Stops on any incorrect input
+
+Read input buffer from file
+Conversion (all runs) complete
+Wrote output buffer to file
+
+The task was finished in 2.519 seconds
+Conversion result: success;   converted 1143864 bytes -> 999999 bytes
+
+Internal timings:
+slot 1     DECODE :  0.000 cyc/el             0 elems
+slot 2     ENCODE :  0.702 cyc/el   11438640000 elems
+From total time   :  0.705 cyc/el
