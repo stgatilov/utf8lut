@@ -14,7 +14,5 @@ syntax: glob
 syntax: regexp
 ^bin/
 ^data/
-^u8u16/
-^utf8fuzz/
-^utf8sse4/
+^contrib/
 ^logs/
