@@ -19,5 +19,7 @@ for test in tests:
         for i in range(2):
             if values[i] is None:
                 values[i] = '???'
+            else:
+                values[i] = '%.2f' % values[i]
         print('  <td>%s / %s</td>' % (values[0], values[1]))
     print('</tr>')
