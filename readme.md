@@ -2,6 +2,7 @@
 
 The vectorized library for UTF-8 conversions on x86 (or x64) architecture.
 It can quickly encode or decode large buffers of UTF-8 data, using SSSE3 instructions and lookup table (lut) to accelerate process.
+Detailed description can be found in the [dirtyhandscoding blog](https://dirtyhandscoding.github.io/posts/utf8lut-vectorized-utf-8-converter-introduction.html).
 
 **Note:** while this library can be used in a real world application (if you need to convert huge amounts of data super-fast), its main purpose is a proof-of-concept for vectorized UTF-8 conversion.
 
@@ -75,7 +76,7 @@ The **rnd** dataset was generated randomly, each code point had 33% probability 
 
 Note that utf8lut uses quite large lookup table, which barely fits CPU cache. As a result, the performance of conversion heavily depends on the particular distribution of code point lengths in the input data, with uniform random distribution being the worst case. 
 
-More detailed performance measurements can be found in the related blog article.
+More detailed performance measurements can be found in the [related blog article](https://dirtyhandscoding.github.io/posts/utf8lut-vectorized-utf-8-converter-test-results.html#performance-evaluation).
 
 ## Usage
 
