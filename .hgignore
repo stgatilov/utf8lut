@@ -17,3 +17,4 @@ syntax: regexp
 ^u8u16/
 ^utf8fuzz/
 ^utf8sse4/
+^logs/
