@@ -1,3 +1,5 @@
+*Migrated from: https://bitbucket.org/stgatilov/utf8lut/*
+
 # **utf8lut**
 
 The vectorized library for UTF-8 conversions on x86 (or x64) architecture.
