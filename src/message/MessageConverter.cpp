@@ -8,7 +8,7 @@ ConversionResult ConvertInMemory(BaseBufferProcessor &processor, const char *inp
     result.status = (ConversionStatus)-1;
     result.inputSize = 0;
     result.outputSize = 0;
-    
+
     if (inputSize < 0 || (!inputBuffer && inputSize != 0)) {
         result.status = csInputOutputNoAccess;
         return result;
@@ -43,7 +43,7 @@ ConversionResult ConvertInMemory(BaseBufferProcessor &processor, const char *inp
     result.outputSize = output.GetFilledOutputSize();
 
     if (result.status == csIncorrectData) {
-        //hard error occured inside loop
+        //hard error occurred inside loop
     }
     else if (input.GetRemainingDataSize() != 0) {
         //some bytes remain in the input

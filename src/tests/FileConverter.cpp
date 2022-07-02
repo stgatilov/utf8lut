@@ -65,7 +65,7 @@ struct Config {
     bool srcRandomChars[4];     // -- | --
     bool dstPrintHash;          // output: [hash]
     bool countBytes;            // --countbytes
-    
+
     Config() {
         srcFormat = dfUtf8;
         dstFormat = dfUtf16;
@@ -90,7 +90,7 @@ struct Config {
         Check(checkMode >= cmFast && checkMode <= cmValidate, "Checking mode must be 0 (fast), 1 (full), or 2 (validate)  (%d)", checkMode);
         Check(!countBytes || (srcFormat == dfUtf8 && !fileToFile), "Counting bytes is only implemented for UTF-8 input and memory-to-memory");
         if (maxBytesFast == 0) {
-            logprintf("Note: trivial convertion is used (no fast path)\n");
+            logprintf("Note: trivial conversion is used (no fast path)\n");
             checkMode = cmValidate;
             smallConverter = true;
             errorCorrection = false;
@@ -119,7 +119,7 @@ struct Config {
         }
         logprintf("  Input (source) in %s: %s\n", GetFormatStr(srcFormat), (srcRandomLen >= 0 ? randomSrcMessage : srcPath));
         logprintf("  Output (dest.) in %s: %s\n", GetFormatStr(dstFormat), (dstPrintHash ? "[print hash]" : dstPath));
-        if (fileToFile) 
+        if (fileToFile)
             logprintf("  Direct file-to-file conversion\n");
 
         logprintf("Processor settings:\n");

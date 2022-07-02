@@ -189,9 +189,9 @@ public:
 // and then automatically copied into the user's byte array.
 // Note that this means minor performance loss due to additional memcpy of the output data.
 // You do not need to do anything special to handle this case, no difference is visible from the outside.
-//     
+//
 // Note that the static method ContiguousOutput::GetMaxOutputSize can be used without plugin
-// in order to see which size of output buffer is needed to surely accomodate result of conversion.
+// in order to see which size of output buffer is needed to surely accommodate result of conversion.
 //
 class ContiguousOutput : public OutputPlugin {
     BaseBufferProcessor *processor;

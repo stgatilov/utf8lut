@@ -135,7 +135,7 @@ public:
     // Note: the last call of 'Process' method must be done with this hint set to true!
     void SetHint(bool isLastBlock = true);
 
-    // Runs convertion of the preconfigured input buffer.
+    // Runs conversion of the preconfigured input buffer.
     // The output is written into preconfigured output buffer (or bufferS in multi-stream case).
     // The method returns:
     //   'true':
